@@ -9,6 +9,7 @@ import express from "express";
 import fs from "fs";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
+import session from "express-session";
 
 // Setup multer for video uploads
 const uploadDir = path.join(process.cwd(), "uploads");
@@ -35,6 +36,21 @@ export async function registerRoutes(
 ): Promise<Server> {
   // Serve uploaded files statically
   app.use('/uploads', express.static(uploadDir));
+
+  // Session middleware MUST be before passport
+  app.use(session({
+    secret: process.env.SESSION_SECRET || "bigpekob-secret",
+    resave: false,
+    saveUninitialized: false,
+    store: storage.sessionStore,
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+  }));
+
+  app.use(passport.initialize());
+  app.use(passport.session());
 
   // Set up Passport for authentication
   passport.use(new LocalStrategy(async (username, password, done) => {
