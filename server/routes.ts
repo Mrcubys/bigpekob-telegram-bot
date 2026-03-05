@@ -26,7 +26,7 @@ const uploader = multer({
     }
   }),
   limits: {
-    fileSize: 1024 * 1024 * 1024, // 1GB limit for up to 1 hour video depending on quality
+    fileSize: 5 * 1024 * 1024 * 1024, // 5GB limit for large high-quality video files
   }
 });
 

@@ -1,6 +1,6 @@
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
-import { LogOut, User, LayoutGrid, Heart, Bookmark, Menu } from "lucide-react";
+import { LogOut, User, LayoutGrid, Heart, Bookmark, Menu, Play } from "lucide-react";
 import { useEffect } from "react";
 
 export default function ProfilePage() {
@@ -92,7 +92,7 @@ export default function ProfilePage() {
                  <User className="w-8 h-8" />
                </div>
                <div className="absolute bottom-2 left-2 flex items-center gap-1 text-xs font-semibold">
-                 <PlaySquare className="w-3 h-3" />
+                 <Play className="w-3 h-3" />
                  <span>{Math.floor(Math.random() * 900) + 10}K</span>
                </div>
             </div>
