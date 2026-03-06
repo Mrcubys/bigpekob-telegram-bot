@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { useInView } from "react-intersection-observer";
-import { Heart, MessageCircle, Bookmark, Share2, Disc, VolumeX, Volume2 } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Share2, Disc, VolumeX, Volume2, User, Plus } from "lucide-react";
 import { type VideoResponse } from "@shared/schema";
 import { clsx } from "clsx";
 
