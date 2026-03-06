@@ -12,7 +12,7 @@ interface VideoPlayerProps {
 export function VideoPlayer({ video, isActive }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   
   const { ref: containerRef, inView } = useInView({
