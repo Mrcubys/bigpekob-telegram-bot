@@ -24,23 +24,27 @@ export function VideoPlayer({ video, isActive }: VideoPlayerProps) {
     if (!videoRef.current) return;
     
     if (inView) {
-      const playPromise = videoRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => setIsPlaying(true))
-          .catch(() => {
-            setIsPlaying(false);
-          });
-      } else {
-        setIsPlaying(true);
+      // Check current state before trying to play
+      if (videoRef.current.paused) {
+        const playPromise = videoRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => setIsPlaying(true))
+            .catch(() => {
+              setIsPlaying(false);
+            });
+        } else {
+          setIsPlaying(true);
+        }
       }
     } else {
-      videoRef.current.pause();
+      // Check if currently playing before pausing
+      if (!videoRef.current.paused) {
+        videoRef.current.pause();
+      }
       setIsPlaying(false);
       // Reset video to start when scrolled out of view for loop feel
-      if (videoRef.current) {
-        videoRef.current.currentTime = 0;
-      }
+      videoRef.current.currentTime = 0;
     }
   }, [inView]);
 
@@ -51,8 +55,16 @@ export function VideoPlayer({ video, isActive }: VideoPlayerProps) {
       videoRef.current.pause();
       setIsPlaying(false);
     } else {
-      videoRef.current.play();
-      setIsPlaying(true);
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => setIsPlaying(true))
+          .catch(() => {
+            setIsPlaying(false);
+          });
+      } else {
+        setIsPlaying(true);
+      }
     }
   };
 
