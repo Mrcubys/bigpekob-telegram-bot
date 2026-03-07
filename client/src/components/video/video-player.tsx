@@ -21,14 +21,21 @@ export function VideoPlayer({ video, isActive }: VideoPlayerProps) {
 
   // Handle Play/Pause based on scroll visibility
   useEffect(() => {
+    if (!videoRef.current) return;
+    
     if (inView) {
-      videoRef.current?.play().catch(() => {
-        console.log("Autoplay prevented by browser");
-        setIsPlaying(false);
-      });
-      setIsPlaying(true);
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => setIsPlaying(true))
+          .catch(() => {
+            setIsPlaying(false);
+          });
+      } else {
+        setIsPlaying(true);
+      }
     } else {
-      videoRef.current?.pause();
+      videoRef.current.pause();
       setIsPlaying(false);
       // Reset video to start when scrolled out of view for loop feel
       if (videoRef.current) {
