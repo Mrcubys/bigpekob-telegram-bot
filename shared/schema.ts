@@ -1,11 +1,24 @@
-import { pgTable, text, serial, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, unique, customType } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+// Custom bytea type for storing binary video data
+const bytea = customType<{ data: Buffer; notNull: false; default: false }>({
+  dataType() {
+    return "bytea";
+  },
+});
+
+// =================== TABLES ===================
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  displayName: text("display_name"),
+  bio: text("bio"),
+  avatarData: text("avatar_data"), // base64 encoded small image
 });
 
 export const videos = pgTable("videos", {
@@ -13,13 +26,80 @@ export const videos = pgTable("videos", {
   userId: integer("user_id").notNull(),
   title: text("title").notNull(),
   description: text("description"),
-  fileUrl: text("file_url").notNull(),
+  fileUrl: text("file_url"), // legacy file-based URL (optional)
+  videoData: bytea("video_data"), // binary video data stored in DB
+  mimeType: text("mime_type").default("video/mp4"),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export const follows = pgTable("follows", {
+  id: serial("id").primaryKey(),
+  followerId: integer("follower_id").notNull(),
+  followingId: integer("following_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (t) => ({
+  unq: unique().on(t.followerId, t.followingId),
+}));
+
+export const likes = pgTable("likes", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  videoId: integer("video_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (t) => ({
+  unq: unique().on(t.userId, t.videoId),
+}));
+
+export const comments = pgTable("comments", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  videoId: integer("video_id").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// =================== RELATIONS ===================
+
+export const usersRelations = relations(users, ({ many }) => ({
+  videos: many(videos),
+  following: many(follows, { relationName: "follower" }),
+  followers: many(follows, { relationName: "following" }),
+  likes: many(likes),
+  comments: many(comments),
+}));
+
+export const videosRelations = relations(videos, ({ one, many }) => ({
+  author: one(users, { fields: [videos.userId], references: [users.id] }),
+  likes: many(likes),
+  comments: many(comments),
+}));
+
+export const followsRelations = relations(follows, ({ one }) => ({
+  follower: one(users, { fields: [follows.followerId], references: [users.id], relationName: "follower" }),
+  following: one(users, { fields: [follows.followingId], references: [users.id], relationName: "following" }),
+}));
+
+export const likesRelations = relations(likes, ({ one }) => ({
+  user: one(users, { fields: [likes.userId], references: [users.id] }),
+  video: one(videos, { fields: [likes.videoId], references: [videos.id] }),
+}));
+
+export const commentsRelations = relations(comments, ({ one }) => ({
+  user: one(users, { fields: [comments.userId], references: [users.id] }),
+  video: one(videos, { fields: [comments.videoId], references: [videos.id] }),
+}));
+
+// =================== SCHEMAS ===================
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
+});
+
+export const updateUserProfileSchema = z.object({
+  displayName: z.string().max(50).optional(),
+  bio: z.string().max(200).optional(),
+  avatarData: z.string().optional(),
 });
 
 export const insertVideoSchema = createInsertSchema(videos).pick({
@@ -27,9 +107,38 @@ export const insertVideoSchema = createInsertSchema(videos).pick({
   description: true,
 });
 
+export const insertCommentSchema = createInsertSchema(comments).pick({
+  content: true,
+});
+
+// =================== TYPES ===================
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UpdateUserProfile = z.infer<typeof updateUserProfileSchema>;
+
 export type Video = typeof videos.$inferSelect;
 export type InsertVideo = z.infer<typeof insertVideoSchema>;
 
-export type VideoResponse = Video & { author?: Pick<User, "username"> };
+export type Follow = typeof follows.$inferSelect;
+export type Like = typeof likes.$inferSelect;
+export type Comment = typeof comments.$inferSelect;
+
+// Rich response types
+export type UserPublic = Pick<User, "id" | "username" | "displayName" | "bio" | "avatarData"> & {
+  followerCount: number;
+  followingCount: number;
+  videoCount: number;
+  isFollowing?: boolean;
+};
+
+export type VideoResponse = Omit<Video, "videoData"> & {
+  author?: Pick<User, "id" | "username" | "displayName" | "avatarData">;
+  likeCount: number;
+  commentCount: number;
+  isLiked?: boolean;
+};
+
+export type CommentResponse = Comment & {
+  author?: Pick<User, "id" | "username" | "displayName" | "avatarData">;
+};

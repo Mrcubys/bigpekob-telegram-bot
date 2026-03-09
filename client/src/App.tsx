@@ -19,8 +19,7 @@ import InboxPage from "./pages/inbox";
 function Router() {
   const [location] = useLocation();
 
-  // Hide bottom nav on specific pages like Auth or Upload
-  const showBottomNav = !["/auth", "/upload"].includes(location);
+  const showBottomNav = !["/auth", "/upload"].includes(location) && !location.startsWith("/upload");
 
   return (
     <MobileContainer>
@@ -30,6 +29,7 @@ function Router() {
         <Route path="/upload" component={UploadPage} />
         <Route path="/inbox" component={InboxPage} />
         <Route path="/profile" component={ProfilePage} />
+        <Route path="/profile/:userId" component={ProfilePage} />
         <Route path="/auth" component={AuthPage} />
         <Route component={NotFound} />
       </Switch>

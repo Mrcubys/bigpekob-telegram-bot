@@ -1,7 +1,6 @@
 import { useVideos } from "@/hooks/use-videos";
 import { VideoPlayer } from "@/components/video/video-player";
 import { Loader2, MonitorPlay } from "lucide-react";
-import { TopNav } from "@/components/layout/top-nav";
 
 // Optional simple top nav for "Following | For You"
 function FeedTopNav() {
