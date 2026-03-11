@@ -19,3 +19,4 @@ uploads/1772967545538-540273574.mp4 filter=lfs diff=lfs merge=lfs -text
 uploads/1772968326702-743369562.mp4 filter=lfs diff=lfs merge=lfs -text
 uploads/1772970000486-707214716.mp4 filter=lfs diff=lfs merge=lfs -text
 uploads/1772970307538-392470793.mp4 filter=lfs diff=lfs merge=lfs -text
+*.mp4 filter=lfs diff=lfs merge=lfs -text
