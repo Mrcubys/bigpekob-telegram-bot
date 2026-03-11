@@ -7,6 +7,8 @@ const MINI_APP_URL = `https://${DOMAIN}/telegram`;
 const VIP_STARS_PRICE = 100;
 const BIGPEKOB_BOT = "bigpekob_bot";
 const CHAT_BOT = "bigpekob_chat_bot";
+// Escaped for Telegram Markdown (underscores must be escaped to avoid italic parsing)
+const CHAT_BOT_MD = "bigpekob\\_chat\\_bot";
 
 // ─── State percakapan PAP ─────────────────────────────────────────────────────
 const papAwaitingMedia = new Set<number>();
@@ -57,13 +59,13 @@ async function postToChannel() {
       `🔥 *Video Indo Viral Terbaru!*${videoList}\n\n` +
       `👆 Nonton sekarang di @${BIGPEKOB_BOT}\n` +
       `🌟 Upgrade VIP untuk download video bebas!\n` +
-      `💬 Chat anonim di @${CHAT_BOT}`,
+      `💬 Chat anonim di @${CHAT_BOT_MD}`,
 
     () =>
       `📺 *Update Video Indo BigPekob!*${videoList}\n\n` +
       `🔞 Nonton gratis, download khusus VIP!\n` +
       `👉 Buka @${BIGPEKOB_BOT} sekarang\n` +
-      `👥 Chat stranger anonim: @${CHAT_BOT}`,
+      `👥 Chat stranger anonim: @${CHAT_BOT_MD}`,
 
     () =>
       `📸 *Donasi PAP Eksklusif BigPekob!*\n\n` +
@@ -86,12 +88,12 @@ async function postToChannel() {
       `Cuma 100 Telegram Stars = 30 hari akses VIP:\n` +
       `• ⬇️ Download semua video\n` +
       `• 📸 Akses PAP eksklusif\n` +
-      `• 💬 Pilih gender di @${CHAT_BOT}\n\n` +
+      `• 💬 Pilih gender di @${CHAT_BOT_MD}\n\n` +
       `🔥 Upgrade sekarang di @${BIGPEKOB_BOT}${videoList}`,
 
     () =>
       `💬 *Chat Anonim di BigPekob!*\n\n` +
-      `Ketemu stranger baru setiap saat di @${CHAT_BOT}\n\n` +
+      `Ketemu stranger baru setiap saat di @${CHAT_BOT_MD}\n\n` +
       `🎭 Identitas 100% terjaga\n` +
       `🔍 Cari pasangan chat random\n` +
       `🌟 VIP: pilih gender lawan chat\n\n` +
@@ -225,7 +227,7 @@ async function sendVipInfo(chatId: number, telegramId: number) {
     await callAPI("sendMessage", {
       chat_id: chatId,
       text:
-        "🌟 *Kamu sudah VIP BigPekob!*\n\n✅ Aktif:\n• Download video di Mini App\n• Akses PAP eksklusif\n• Pilih gender di @" + CHAT_BOT,
+        "🌟 *Kamu sudah VIP BigPekob!*\n\n✅ Aktif:\n• Download video di Mini App\n• Akses PAP eksklusif\n• Pilih gender di @" + CHAT_BOT_MD,
       parse_mode: "Markdown",
       reply_markup: JSON.stringify({
         inline_keyboard: [[{ text: "🎬 Buka BigPekob", web_app: { url: MINI_APP_URL } }]],
@@ -238,7 +240,7 @@ async function sendVipInfo(chatId: number, telegramId: number) {
     text:
       "🌟 *Upgrade ke VIP BigPekob!*\n\n" +
       "Yang kamu dapat:\n• ⬇️ Download semua video\n• 📸 Akses PAP eksklusif\n• 💬 Pilih gender lawan chat di @" +
-      CHAT_BOT +
+      CHAT_BOT_MD +
       "\n• ✅ Aktif 30 hari\n\n" +
       `💰 Harga: *${VIP_STARS_PRICE} Telegram Stars*\n\nKlik tombol untuk bayar:`,
     parse_mode: "Markdown",
@@ -320,7 +322,7 @@ async function sendHelp(chatId: number) {
       "/pap — Donasi & lihat PAP 18+\n" +
       "/chatkechannel — Kirim pesan ke channel\n" +
       "/help — Bantuan ini\n\n" +
-      `👥 Chat anonim: @${CHAT_BOT}\n\n` +
+      `👥 Chat anonim: @${CHAT_BOT_MD}\n\n` +
       "⚠️ _Konten 18+. Dilarang di bawah umur._",
     parse_mode: "Markdown",
     reply_markup: JSON.stringify({
@@ -352,7 +354,7 @@ export async function handleTelegramUpdate(body: any) {
         text:
           "🌟 *Selamat! Kamu sekarang VIP BigPekob!*\n\n" +
           "✅ Aktif 30 hari:\n• Download video\n• PAP eksklusif\n• Pilih gender di @" +
-          CHAT_BOT +
+          CHAT_BOT_MD +
           "\n\n_Aktif sampai: " +
           expiresAt.toLocaleDateString("id-ID") +
           "_",

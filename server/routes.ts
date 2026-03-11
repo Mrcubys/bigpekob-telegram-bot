@@ -49,8 +49,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     store: storage.sessionStore,
     proxy: true,
     cookie: {
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: true, // Replit always uses HTTPS
+      sameSite: "none", // Required for Telegram Mini App WebView context
       httpOnly: true,
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     },

@@ -434,33 +434,40 @@ function UploadTab({ user, onNeedLogin }: { user: User | null | undefined; onNee
     if (!file || !title.trim()) return;
     setUploading(true);
     setErr("");
-    setProgress(0);
+    setProgress(10);
 
     const formData = new FormData();
     formData.append("file", file);
     formData.append("title", title.trim());
     if (desc.trim()) formData.append("description", desc.trim());
 
+    // Simulate progress while uploading (fetch doesn't support real progress)
+    const timer = setInterval(() => {
+      setProgress((p) => (p < 85 ? p + 5 : p));
+    }, 800);
+
     try {
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", "/api/videos");
-        xhr.withCredentials = true;
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 100));
-        };
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) resolve();
-          else { try { reject(new Error(JSON.parse(xhr.responseText).message)); } catch { reject(new Error("Upload gagal")); } }
-        };
-        xhr.onerror = () => reject(new Error("Network error"));
-        xhr.send(formData);
+      const res = await fetch("/api/videos", {
+        method: "POST",
+        credentials: "include",
+        body: formData,
       });
+
+      clearInterval(timer);
+      setProgress(100);
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || `Error ${res.status}: Upload gagal`);
+      }
+
       queryClient.invalidateQueries({ queryKey: ["/api/videos"] });
       setDone(true);
       setFile(null); setTitle(""); setDesc(""); setProgress(0);
     } catch (e: any) {
-      setErr(e.message || "Upload gagal");
+      clearInterval(timer);
+      setProgress(0);
+      setErr(e.message || "Upload gagal. Pastikan kamu login dan coba lagi.");
     } finally {
       setUploading(false);
     }
