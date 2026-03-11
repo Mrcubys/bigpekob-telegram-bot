@@ -98,7 +98,7 @@ export async function runStartupSeed() {
     // Ensure admin exists
     const adminExists = await db.select().from(users).where(eq(users.username, "admin"));
     if (!adminExists.length) {
-      await db.insert(users).values({ username: "admin", password: "password" });
+      await db.insert(users).values({ username: "admin", password: process.env.ADMIN_PASSWORD ?? "password" });
     }
 
     // Create seed users and build username->id map

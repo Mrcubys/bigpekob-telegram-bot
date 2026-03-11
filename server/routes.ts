@@ -326,8 +326,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       const existingAdmin = await storage.getUserByUsername("admin");
       if (!existingAdmin) {
-        await storage.createUser({ username: "admin", password: "password" });
-        console.log("Created seed user: admin / password");
+        const adminPassword = process.env.ADMIN_SEED_PASSWORD || "password";
+        await storage.createUser({ username: "admin", password: adminPassword });
+        console.log("Created seed user: admin (password from ADMIN_SEED_PASSWORD env var)");
       }
     } catch (err) {
       console.error("Seed error:", err);
