@@ -13,6 +13,7 @@ import { Strategy as LocalStrategy } from "passport-local";
 import session from "express-session";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
+import { setupTelegramWebhook, handleTelegramUpdate } from "./telegram";
 
 // Setup multer: use memory storage so we can save to DB as binary
 const uploader = multer({
@@ -320,6 +321,19 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     const results = await storage.searchUsers(q.trim(), currentUserId);
     res.status(200).json(results);
   });
+
+  // === TELEGRAM WEBHOOK ===
+  app.post("/api/telegram/webhook", express.json(), async (req, res) => {
+    res.status(200).json({ ok: true });
+    try {
+      await handleTelegramUpdate(req.body);
+    } catch (err) {
+      console.error("[telegram] webhook error:", err);
+    }
+  });
+
+  // Setup Telegram webhook on startup
+  setupTelegramWebhook().catch(console.error);
 
   // Seed database
   setTimeout(async () => {

@@ -81,6 +81,7 @@ Preferred communication style: Simple, everyday language.
 ### Required Environment Variables
 - `DATABASE_URL` — PostgreSQL connection string (required; app throws on startup without it)
 - `SESSION_SECRET` — Secret for signing session cookies (has insecure fallback; must be set in production)
+- `TELEGRAM_BOT_TOKEN` — Bot token from @BotFather (required for Telegram Mini App integration)
 
 ### Key Third-Party Libraries
 

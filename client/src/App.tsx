@@ -15,9 +15,19 @@ import AuthPage from "./pages/auth";
 import ProfilePage from "./pages/profile";
 import DiscoverPage from "./pages/discover";
 import InboxPage from "./pages/inbox";
+import TelegramMiniApp from "./pages/telegram-miniapp";
 
 function Router() {
   const [location] = useLocation();
+
+  // Telegram Mini App - full screen, no nav
+  if (location === "/telegram" || location.startsWith("/telegram/")) {
+    return (
+      <Switch>
+        <Route path="/telegram" component={TelegramMiniApp} />
+      </Switch>
+    );
+  }
 
   const showBottomNav = !["/auth", "/upload"].includes(location) && !location.startsWith("/upload");
 
