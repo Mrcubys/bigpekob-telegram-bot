@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, useCallback } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { type VideoResponse, type User } from "@shared/schema";
 import {
   Heart, MessageCircle, VolumeX, Volume2, Play,
@@ -107,11 +107,13 @@ function CommentSheet({
             <p className="text-zinc-500 text-center text-sm py-6">Belum ada komentar</p>
           ) : comments.map((c: any) => (
             <div key={c.id} className="flex gap-2">
-              <div className="w-7 h-7 rounded-full bg-zinc-700 flex items-center justify-center flex-shrink-0 mt-0.5">
-                {c.author?.avatarData ? (
-                  <img src={c.author.avatarData} alt="" className="w-full h-full object-cover rounded-full" />
+              <div className="flex-shrink-0 mt-0.5">
+                {c.author?.id ? (
+                  <LazyAvatar userId={c.author.id} className="w-7 h-7 rounded-full object-cover" />
                 ) : (
-                  <UserIcon className="w-3.5 h-3.5 text-zinc-400" />
+                  <div className="w-7 h-7 rounded-full bg-zinc-700 flex items-center justify-center">
+                    <UserIcon className="w-3.5 h-3.5 text-zinc-400" />
+                  </div>
                 )}
               </div>
               <div>
@@ -141,6 +143,41 @@ function CommentSheet({
           </button>
         </form>
       </div>
+    </div>
+  );
+}
+
+// ─── Lazy Avatar ─────────────────────────────────────────────────────────────
+const avatarCache = new Map<number, string | null>();
+
+function LazyAvatar({ userId, className }: { userId: number; className?: string }) {
+  const [src, setSrc] = useState<string | null | undefined>(() => avatarCache.get(userId));
+
+  useEffect(() => {
+    if (avatarCache.has(userId)) {
+      setSrc(avatarCache.get(userId));
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/users/${userId}/avatar`, { credentials: "include" })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (cancelled) return;
+        const val = d?.avatarData || null;
+        avatarCache.set(userId, val);
+        setSrc(val);
+      })
+      .catch(() => { if (!cancelled) { avatarCache.set(userId, null); setSrc(null); } });
+    return () => { cancelled = true; };
+  }, [userId]);
+
+  if (src) {
+    const imgSrc = src.startsWith("data:") ? src : `data:image/jpeg;base64,${src}`;
+    return <img src={imgSrc} alt="" className={className || "w-8 h-8 rounded-full object-cover border border-white/30"} />;
+  }
+  return (
+    <div className={className || "w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center"}>
+      <UserIcon className="w-4 h-4 text-white" />
     </div>
   );
 }
@@ -298,8 +335,8 @@ function TGVideoCard({
       {/* Info bawah kiri */}
       <div className="absolute bottom-[70px] left-0 right-[70px] px-4 z-20 pointer-events-none">
         <div className="flex items-center gap-2 mb-1.5">
-          {video.author?.avatarData ? (
-            <img src={`data:image/jpeg;base64,${video.author.avatarData}`} alt="" className="w-8 h-8 rounded-full object-cover border border-white/30" />
+          {video.author?.id ? (
+            <LazyAvatar userId={video.author.id} />
           ) : (
             <div className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center">
               <UserIcon className="w-4 h-4 text-white" />
@@ -394,19 +431,34 @@ function TGVideoCard({
 }
 
 // ─── Feed Tab ────────────────────────────────────────────────────────────────
+const PAGE_SIZE = 20;
+
 function FeedTab({ user, onNeedLogin, isVip, telegramId }: { user: User | null | undefined; onNeedLogin: () => void; isVip?: boolean; telegramId?: number }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const { data: videos = [], isLoading } = useQuery<VideoResponse[]>({
+  const {
+    data,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery<VideoResponse[]>({
     queryKey: ["/api/videos"],
-    queryFn: async () => {
-      const res = await fetch("/api/videos", { credentials: "include" });
+    queryFn: async ({ pageParam }) => {
+      const res = await fetch(`/api/videos?limit=${PAGE_SIZE}&offset=${pageParam}`, { credentials: "include" });
       if (!res.ok) throw new Error("Failed");
       return res.json();
     },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.length < PAGE_SIZE) return undefined;
+      return allPages.reduce((sum, p) => sum + p.length, 0);
+    },
     staleTime: 30_000,
   });
+
+  const videos = useMemo(() => data?.pages.flat() ?? [], [data]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -418,12 +470,15 @@ function FeedTab({ user, onNeedLogin, isVip, telegramId }: { user: User | null |
       requestAnimationFrame(() => {
         const index = Math.round(container.scrollTop / container.clientHeight);
         setActiveIndex(index);
+        if (hasNextPage && !isFetchingNextPage && index >= videos.length - 5) {
+          fetchNextPage();
+        }
         ticking = false;
       });
     };
     container.addEventListener("scroll", handleScroll, { passive: true });
     return () => container.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [hasNextPage, isFetchingNextPage, videos.length, fetchNextPage]);
 
   if (isLoading) {
     return (
@@ -468,6 +523,11 @@ function FeedTab({ user, onNeedLogin, isVip, telegramId }: { user: User | null |
           </div>
         );
       })}
+      {isFetchingNextPage && (
+        <div className="w-full h-16 flex items-center justify-center bg-black">
+          <Loader2 className="w-6 h-6 animate-spin text-white/40" />
+        </div>
+      )}
     </div>
   );
 }

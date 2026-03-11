@@ -210,13 +210,24 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  app.get("/api/users/:id/avatar", async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+    const user = await storage.getUser(id);
+    if (!user || !user.avatarData) return res.status(404).json({ message: "No avatar" });
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.status(200).json({ avatarData: user.avatarData });
+  });
+
   // === VIDEO ROUTES ===
 
   app.get(api.videos.list.path, async (req, res) => {
     const currentUserId = req.isAuthenticated() ? (req.user as any).id : undefined;
     const currentUser = req.isAuthenticated() ? (req.user as any) : null;
     const isVip = currentUser?.vipUntil && new Date(currentUser.vipUntil) >= new Date();
-    const videosList = await storage.getVideos(currentUserId);
+    const limit = Math.max(1, Math.min(parseInt(req.query.limit as string) || 20, 50));
+    const offset = Math.max(0, parseInt(req.query.offset as string) || 0);
+    const videosList = await storage.getVideos(currentUserId, limit, offset);
     const sanitized = videosList.map(v => {
       if (v.isExclusive && !isVip) {
         return { ...v, fileUrl: null };

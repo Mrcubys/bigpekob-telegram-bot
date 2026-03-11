@@ -5,7 +5,7 @@ export function useVideos() {
   return useQuery<VideoResponse[]>({
     queryKey: ["/api/videos"],
     queryFn: async () => {
-      const res = await fetch("/api/videos", { credentials: "include" });
+      const res = await fetch("/api/videos?limit=50", { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch videos");
       return res.json();
     },

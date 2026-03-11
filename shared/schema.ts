@@ -179,7 +179,7 @@ export type UserPublic = Pick<User, "id" | "username" | "displayName" | "bio" | 
 };
 
 export type VideoResponse = Omit<Video, "videoData"> & {
-  author?: Pick<User, "id" | "username" | "displayName" | "avatarData">;
+  author?: Pick<User, "id" | "username" | "displayName">;
   likeCount: number;
   commentCount: number;
   isLiked?: boolean;
@@ -187,5 +187,5 @@ export type VideoResponse = Omit<Video, "videoData"> & {
 };
 
 export type CommentResponse = Comment & {
-  author?: Pick<User, "id" | "username" | "displayName" | "avatarData">;
+  author?: Pick<User, "id" | "username" | "displayName">;
 };

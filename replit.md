@@ -18,6 +18,7 @@ Key features:
 - **Channel auto-posting** every hour (6 rotating templates with video titles list)
 - **`/chatkechannel`** command: member kirim pesan anonim ke channel BigPekob
 - **Optimized video streaming** with in-memory cache (10 min TTL) + ETag support
+- **Performance**: `avatarData` excluded from video/comment list queries to avoid huge JSON payloads; avatars loaded lazily via `/api/users/:id/avatar` with client-side cache; video feed uses infinite scroll pagination (20 per page)
 - **@bigpekob_chat_bot** (anonymous chat): gender selection, /cari pairing, /stop, VIP gender filter, daily 100-search limit
 
 ## User Preferences
@@ -50,7 +51,8 @@ Preferred communication style: Simple, everyday language.
 - **File Uploads**: `multer` with memory storage; video binary data is stored directly in the PostgreSQL `bytea` column (no disk storage for new uploads; legacy file-based `/uploads` directory is still served for old content)
 - **API Structure**: RESTful routes defined in `shared/routes.ts` (typed with Zod), implemented in `server/routes.ts`:
   - `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/logout`, `PUT /api/auth/profile`
-  - `GET /api/videos`, `POST /api/videos`, `GET /api/videos/:id`, `GET /api/videos/:id/stream`
+  - `GET /api/videos?limit=&offset=` (paginated, default 20, max 50), `POST /api/videos`, `GET /api/videos/:id`, `GET /api/videos/:id/stream`
+  - `GET /api/users/:id/avatar` (lazy avatar loading, cached 1h)
   - `POST /api/videos/:id/like`, `GET/POST /api/videos/:id/comments`
   - `GET /api/users/:id`, `GET /api/users/:id/videos`, `POST /api/users/:id/follow`
   - `GET /api/search/users`

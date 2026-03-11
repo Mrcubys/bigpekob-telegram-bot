@@ -23,7 +23,7 @@ export interface IStorage {
 
   // Videos
   createVideo(data: { userId: number; title: string; description?: string; fileUrl?: string; videoData?: Buffer; mimeType?: string }): Promise<Video>;
-  getVideos(currentUserId?: number): Promise<VideoResponse[]>;
+  getVideos(currentUserId?: number, limit?: number, offset?: number): Promise<VideoResponse[]>;
   getVideoById(id: number, currentUserId?: number): Promise<VideoResponse | undefined>;
   getVideoData(id: number): Promise<{ data: Buffer; mimeType: string } | undefined>;
   getUserVideos(userId: number, currentUserId?: number): Promise<VideoResponse[]>;
@@ -167,7 +167,7 @@ export class DatabaseStorage implements IStorage {
     return video;
   }
 
-  async getVideos(currentUserId?: number): Promise<VideoResponse[]> {
+  async getVideos(currentUserId?: number, limit = 20, offset = 0): Promise<VideoResponse[]> {
     const rows = await db
       .select({
         id: videos.id,
@@ -182,7 +182,6 @@ export class DatabaseStorage implements IStorage {
           id: users.id,
           username: users.username,
           displayName: users.displayName,
-          avatarData: users.avatarData,
         },
         likeCount: sql<number>`(SELECT COUNT(*) FROM likes WHERE video_id = "videos"."id")::int`,
         commentCount: sql<number>`(SELECT COUNT(*) FROM comments WHERE video_id = "videos"."id")::int`,
@@ -192,7 +191,9 @@ export class DatabaseStorage implements IStorage {
       })
       .from(videos)
       .leftJoin(users, eq(videos.userId, users.id))
-      .orderBy(desc(videos.createdAt));
+      .orderBy(desc(videos.createdAt))
+      .limit(limit)
+      .offset(offset);
     
     return rows as VideoResponse[];
   }
@@ -212,7 +213,6 @@ export class DatabaseStorage implements IStorage {
           id: users.id,
           username: users.username,
           displayName: users.displayName,
-          avatarData: users.avatarData,
         },
         likeCount: sql<number>`(SELECT COUNT(*) FROM likes WHERE video_id = "videos"."id")::int`,
         commentCount: sql<number>`(SELECT COUNT(*) FROM comments WHERE video_id = "videos"."id")::int`,
@@ -252,7 +252,6 @@ export class DatabaseStorage implements IStorage {
           id: users.id,
           username: users.username,
           displayName: users.displayName,
-          avatarData: users.avatarData,
         },
         likeCount: sql<number>`(SELECT COUNT(*) FROM likes WHERE video_id = "videos"."id")::int`,
         commentCount: sql<number>`(SELECT COUNT(*) FROM comments WHERE video_id = "videos"."id")::int`,
@@ -335,7 +334,7 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db.select().from(users).where(eq(users.id, userId));
     return {
       ...comment,
-      author: user ? { id: user.id, username: user.username, displayName: user.displayName, avatarData: user.avatarData } : undefined,
+      author: user ? { id: user.id, username: user.username, displayName: user.displayName } : undefined,
     };
   }
 
@@ -351,7 +350,6 @@ export class DatabaseStorage implements IStorage {
           id: users.id,
           username: users.username,
           displayName: users.displayName,
-          avatarData: users.avatarData,
         },
       })
       .from(comments)

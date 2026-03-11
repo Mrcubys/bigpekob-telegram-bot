@@ -191,11 +191,7 @@ export function VideoPlayer({ video, isActive }: VideoPlayerProps) {
         <div className="relative cursor-pointer" onClick={handleAvatarClick}>
           <div className="w-12 h-12 bg-white rounded-full p-0.5">
             <div className="w-full h-full bg-zinc-800 rounded-full flex items-center justify-center overflow-hidden">
-              {video.author?.avatarData ? (
-                <img src={video.author.avatarData} alt="" className="w-full h-full object-cover rounded-full" />
-              ) : (
-                <User className="w-6 h-6 text-zinc-400" />
-              )}
+              <User className="w-6 h-6 text-zinc-400" />
             </div>
           </div>
           <button
@@ -268,11 +264,7 @@ export function VideoPlayer({ video, isActive }: VideoPlayerProps) {
                 comments.map((comment) => (
                   <div key={comment.id} className="flex gap-3" data-testid={`comment-${comment.id}`}>
                     <div className="w-8 h-8 bg-zinc-700 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden">
-                      {comment.author?.avatarData ? (
-                        <img src={comment.author.avatarData} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <User className="w-4 h-4 text-zinc-400" />
-                      )}
+                      <User className="w-4 h-4 text-zinc-400" />
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-zinc-400">
