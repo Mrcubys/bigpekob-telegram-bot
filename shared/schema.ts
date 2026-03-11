@@ -82,6 +82,15 @@ export const channelConfig = pgTable("channel_config", {
   lastPostedAt: timestamp("last_posted_at"),
 });
 
+export const telegramUsers = pgTable("telegram_users", {
+  id: serial("id").primaryKey(),
+  telegramId: bigint("telegram_id", { mode: "number" }).notNull().unique(),
+  gender: text("gender"), // 'male' | 'female' | null (not set yet)
+  firstName: text("first_name"),
+  username: text("username"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // =================== RELATIONS ===================
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -151,6 +160,7 @@ export type Comment = typeof comments.$inferSelect;
 export type VipUser = typeof vipUsers.$inferSelect;
 export type PapDonation = typeof papDonations.$inferSelect;
 export type ChannelConfig = typeof channelConfig.$inferSelect;
+export type TelegramUser = typeof telegramUsers.$inferSelect;
 
 // Rich response types
 export type UserPublic = Pick<User, "id" | "username" | "displayName" | "bio" | "avatarData"> & {

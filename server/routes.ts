@@ -167,7 +167,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     videoCache.set(id, entry);
     // Evict old entries if cache grows too large
     if (videoCache.size > 30) {
-      const oldest = [...videoCache.entries()].sort((a, b) => a[1].cachedAt - b[1].cachedAt)[0];
+      const oldest = Array.from(videoCache.entries()).sort((a, b) => a[1].cachedAt - b[1].cachedAt)[0];
       videoCache.delete(oldest[0]);
     }
     return entry;

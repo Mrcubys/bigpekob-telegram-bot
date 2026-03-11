@@ -1,9 +1,9 @@
 import { db } from "./db";
 import {
-  users, videos, follows, likes, comments, vipUsers, papDonations, channelConfig,
+  users, videos, follows, likes, comments, vipUsers, papDonations, channelConfig, telegramUsers,
   type User, type InsertUser, type UpdateUserProfile,
   type Video, type VideoResponse, type UserPublic, type CommentResponse,
-  type VipUser, type PapDonation, type ChannelConfig,
+  type VipUser, type PapDonation, type ChannelConfig, type TelegramUser,
 } from "@shared/schema";
 import { eq, desc, and, sql, ilike, or, gt } from "drizzle-orm";
 import session from "express-session";
@@ -59,6 +59,10 @@ export interface IStorage {
   getChannelConfig(): Promise<ChannelConfig | undefined>;
   setChannelConfig(channelId: string): Promise<ChannelConfig>;
   updateChannelLastPosted(id: number): Promise<void>;
+
+  // Telegram Users (gender + profile)
+  getTelegramUser(telegramId: number): Promise<TelegramUser | undefined>;
+  upsertTelegramUser(data: { telegramId: number; firstName?: string; username?: string; gender?: string }): Promise<TelegramUser>;
 
   sessionStore: session.Store;
 }
@@ -442,6 +446,34 @@ export class DatabaseStorage implements IStorage {
 
   async updateChannelLastPosted(id: number): Promise<void> {
     await db.update(channelConfig).set({ lastPostedAt: new Date() }).where(eq(channelConfig.id, id));
+  }
+
+  // =========== TELEGRAM USERS ===========
+
+  async getTelegramUser(telegramId: number): Promise<TelegramUser | undefined> {
+    const [row] = await db.select().from(telegramUsers).where(eq(telegramUsers.telegramId, telegramId));
+    return row;
+  }
+
+  async upsertTelegramUser(data: { telegramId: number; firstName?: string; username?: string; gender?: string }): Promise<TelegramUser> {
+    const existing = await this.getTelegramUser(data.telegramId);
+    const updates: Record<string, any> = {};
+    if (data.firstName !== undefined) updates.firstName = data.firstName;
+    if (data.username !== undefined) updates.username = data.username;
+    if (data.gender !== undefined) updates.gender = data.gender;
+
+    if (existing) {
+      if (Object.keys(updates).length === 0) return existing;
+      const [updated] = await db.update(telegramUsers)
+        .set(updates)
+        .where(eq(telegramUsers.telegramId, data.telegramId))
+        .returning();
+      return updated;
+    }
+    const [row] = await db.insert(telegramUsers)
+      .values({ telegramId: data.telegramId, ...updates })
+      .returning();
+    return row;
   }
 }
 
