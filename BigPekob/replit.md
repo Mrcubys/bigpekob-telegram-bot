@@ -1,0 +1,105 @@
+# BigPekob - TikTok-like Video Sharing Platform
+
+## Overview
+
+BigPekob is a TikTok-inspired short video sharing platform built as a full-stack web application. It features a mobile-first design with a vertical scroll-snap video feed, user authentication, video uploads, likes, comments, follows, and user discovery. On desktop, the app renders in a phone-screen container for an authentic mobile experience.
+
+Key features:
+- Full-screen vertical scroll-snap video feed ("For You" style)
+- Video upload with binary storage in PostgreSQL (bytea column)
+- User auth with sessions (register/login/logout)
+- Like, comment, and follow social interactions
+- User discovery/search
+- Profile editing with base64 avatar support
+- Inbox placeholder page
+
+## User Preferences
+
+Preferred communication style: Simple, everyday language.
+
+## System Architecture
+
+### Frontend Architecture
+
+- **Framework**: React 18 with TypeScript, bundled by Vite
+- **Routing**: `wouter` (lightweight client-side router)
+- **State/Data Fetching**: TanStack React Query v5 for server state, with custom hooks per domain (`use-videos`, `use-auth`, `use-comments`, `use-follow`, `use-search`, `use-user-profile`)
+- **UI Components**: shadcn/ui (Radix UI primitives) with Tailwind CSS, "new-york" style
+- **Styling**: Tailwind CSS with CSS variables for theming; dark-first color palette (zinc-950 background); custom fonts (Plus Jakarta Sans, Outfit)
+- **Mobile Container**: `MobileContainer` wrapper (`max-w-[420px]`, `100dvh`) centers a phone-sized view on desktop, with a `BottomNav` bar for navigation
+- **Pages**:
+  - `/` — Feed (vertical scroll-snap video list)
+  - `/discover` — User search
+  - `/upload` — Video upload form
+  - `/inbox` — Placeholder inbox/messages
+  - `/profile` / `/profile/:userId` — User profile with video grid
+  - `/auth` — Login/Register
+
+### Backend Architecture
+
+- **Runtime**: Node.js with Express (TypeScript via `tsx` in dev, esbuild bundle in prod)
+- **Entry**: `server/index.ts` → registers routes via `server/routes.ts`, serves static files via `server/static.ts`, uses `server/vite.ts` for dev HMR
+- **Auth**: `passport-local` strategy with `express-session` (sessions stored in PostgreSQL via `connect-pg-simple`)
+- **File Uploads**: `multer` with memory storage; video binary data is stored directly in the PostgreSQL `bytea` column (no disk storage for new uploads; legacy file-based `/uploads` directory is still served for old content)
+- **API Structure**: RESTful routes defined in `shared/routes.ts` (typed with Zod), implemented in `server/routes.ts`:
+  - `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/logout`, `PUT /api/auth/profile`
+  - `GET /api/videos`, `POST /api/videos`, `GET /api/videos/:id`, `GET /api/videos/:id/stream`
+  - `POST /api/videos/:id/like`, `GET/POST /api/videos/:id/comments`
+  - `GET /api/users/:id`, `GET /api/users/:id/videos`, `POST /api/users/:id/follow`
+  - `GET /api/search/users`
+- **Storage Layer**: `server/storage.ts` defines an `IStorage` interface implemented with Drizzle ORM queries, keeping all DB logic in one place
+
+### Data Storage
+
+- **Database**: PostgreSQL (required via `DATABASE_URL` env var)
+- **ORM**: Drizzle ORM with `drizzle-kit` for migrations (`./migrations` directory, schema at `shared/schema.ts`)
+- **Schema tables**:
+  - `users` — id, username, password, displayName, bio, avatarData (base64 string)
+  - `videos` — id, userId, title, description, fileUrl (legacy), videoData (bytea binary), mimeType, createdAt
+  - `follows` — followerId, followingId (unique pair)
+  - `likes` — userId, videoId (unique pair)
+  - `comments` — userId, videoId, content, createdAt
+- **Sessions**: Stored in PostgreSQL using `connect-pg-simple`
+- **Video storage strategy**: Binary video data is stored in the `videoData` bytea column. This avoids external storage dependencies but may become a bottleneck for large libraries. The legacy `fileUrl` path still exists for backward compatibility.
+
+### Authentication & Authorization
+
+- Session-based auth (not JWT) using `express-session` + `passport-local`
+- Sessions persist in PostgreSQL (7-day cookie max age)
+- Protected routes check `req.isAuthenticated()` on the server; client redirects to `/auth` when API returns 401
+- `SESSION_SECRET` env var (falls back to hardcoded default — should be set in production)
+
+### Build & Deployment
+
+- **Dev**: `tsx server/index.ts` + Vite dev server with HMR via middleware mode
+- **Build**: `script/build.ts` runs Vite for client (outputs to `dist/public`) then esbuild for server (outputs `dist/index.cjs`), bundling an allowlisted set of server deps for fast cold starts
+- **Start**: `node dist/index.cjs` (production)
+- **DB migrations**: `drizzle-kit push` (`npm run db:push`)
+
+## External Dependencies
+
+### Required Environment Variables
+- `DATABASE_URL` — PostgreSQL connection string (required; app throws on startup without it)
+- `SESSION_SECRET` — Secret for signing session cookies (has insecure fallback; must be set in production)
+
+### Key Third-Party Libraries
+
+| Category | Library | Purpose |
+|---|---|---|
+| Database | `drizzle-orm`, `drizzle-kit`, `pg` | ORM + PostgreSQL driver |
+| Auth | `passport`, `passport-local`, `express-session`, `connect-pg-simple` | Session auth |
+| Upload | `multer` | Multipart form parsing for video upload |
+| UI Primitives | `@radix-ui/*` | Accessible component primitives |
+| Styling | `tailwindcss`, `class-variance-authority`, `clsx`, `tailwind-merge` | Utility-first CSS |
+| Data Fetching | `@tanstack/react-query` | Server state management |
+| Routing | `wouter` | Lightweight React router |
+| Forms | `react-hook-form`, `@hookform/resolvers` | Form state + validation |
+| Validation | `zod`, `drizzle-zod` | Schema validation shared between client and server |
+| Video Carousel | `embla-carousel-react` | Scroll/carousel primitives |
+| Date | `date-fns` | Date formatting |
+| ID generation | `nanoid` | Unique ID generation |
+
+### Replit-specific Plugins (dev only)
+- `@replit/vite-plugin-runtime-error-modal` — Runtime error overlay
+- `@replit/vite-plugin-cartographer` — Replit file explorer integration
+- `@replit/vite-plugin-dev-banner` — Dev mode banner
