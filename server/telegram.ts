@@ -1,5 +1,9 @@
 import { storage } from "./storage";
 
+function escHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
 const DOMAIN = process.env.REPLIT_DOMAINS?.split(",")[0] || "";
 const WEBHOOK_URL = `https://${DOMAIN}/api/telegram/webhook`;
@@ -7,19 +11,11 @@ const MINI_APP_URL = `https://${DOMAIN}/telegram`;
 const VIP_STARS_PRICE = 100;
 const BIGPEKOB_BOT = "bigpekob_bot";
 const CHAT_BOT = "bigpekob_chat_bot";
-// Escaped for Telegram Markdown (underscores must be escaped to avoid italic parsing)
-const CHAT_BOT_MD = "bigpekob\\_chat\\_bot";
 
-// ─── State percakapan PAP ─────────────────────────────────────────────────────
 const papAwaitingMedia = new Set<number>();
-
-// ─── State /chatkechannel (menunggu pesan dari user) ─────────────────────────
 const awaitingChannelMsg = new Set<number>();
-
-// ─── Counter promo messages ───────────────────────────────────────────────────
 let promoIndex = 0;
 
-// ─── Panggil Bot API langsung ─────────────────────────────────────────────────
 async function callAPI(method: string, params: Record<string, any> = {}) {
   try {
     const res = await fetch(`https://api.telegram.org/bot${TOKEN}/${method}`, {
@@ -36,39 +32,35 @@ async function callAPI(method: string, params: Record<string, any> = {}) {
   }
 }
 
-// ─── Posting promo + daftar video ke channel setiap jam ──────────────────────
 async function postToChannel() {
   const channel = await storage.getChannelConfig();
   if (!channel) return;
 
-  // Ambil 10 video terbaru
   const videos = await storage.getVideos();
   const latest = videos.slice(0, 10);
 
-  // Buat daftar judul video
   let videoList = "";
   if (latest.length > 0) {
     videoList =
-      "\n\n🎬 *Nonton Sekarang:*\n" +
-      latest.map((v, i) => `${i + 1}. ${v.title || "Untitled"}`).join("\n");
+      "\n\n🎬 <b>Nonton Sekarang:</b>\n" +
+      latest.map((v, i) => `${i + 1}. ${escHtml(v.title || "Untitled")}`).join("\n");
   }
 
-  // Template promo yang berbeda-beda
   const promos = [
     () =>
-      `🔥 *Video Indo Viral Terbaru!*${videoList}\n\n` +
+      `🔥 <b>Video Indo Viral Terbaru!</b>${videoList}\n\n` +
       `👆 Nonton sekarang di @${BIGPEKOB_BOT}\n` +
       `🌟 Upgrade VIP untuk download video bebas!\n` +
-      `💬 Chat anonim di @${CHAT_BOT_MD}`,
+      `💬 Chat anonim di @${CHAT_BOT}`,
 
     () =>
-      `📺 *Update Video Indo BigPekob!*${videoList}\n\n` +
+      `📺 <b>Update Video Indo BigPekob!</b>${videoList}\n\n` +
       `🔞 Nonton gratis, download khusus VIP!\n` +
       `👉 Buka @${BIGPEKOB_BOT} sekarang\n` +
-      `👥 Chat stranger anonim: @${CHAT_BOT_MD}`,
+      `👥 Chat stranger anonim: @${CHAT_BOT}`,
 
     () =>
-      `📸 *Donasi PAP Eksklusif BigPekob!*\n\n` +
+      `📸 <b>Donasi PAP Eksklusif BigPekob!</b>\n\n` +
       `Kirim PAP kamu dan lihat PAP dari member lain!\n` +
       `✅ Privasi 100% terjaga — identitas tidak pernah diungkapkan\n` +
       `👨 PAP cowok → dilihat cewek\n` +
@@ -77,23 +69,23 @@ async function postToChannel() {
       `Ketik /pap untuk mulai!`,
 
     () =>
-      `🎥 *Upload Video Kamu ke BigPekob!*\n\n` +
+      `🎥 <b>Upload Video Kamu ke BigPekob!</b>\n\n` +
       `Punya video menarik? Upload sekarang dan dapatkan likes dari ribuan member!\n\n` +
-      `✅ Upload gratis & mudah\n` +
+      `✅ Upload gratis &amp; mudah\n` +
       `🔥 Video kamu tampil di feed member lain\n\n` +
-      `👉 Upload di: @${BIGPEKOB_BOT}${videoList ? `\n\n📺 Video trending:\n${latest.slice(0, 5).map((v, i) => `${i + 1}. ${v.title || "Untitled"}`).join("\n")}` : ""}`,
+      `👉 Upload di: @${BIGPEKOB_BOT}${videoList ? `\n\n📺 Video trending:\n${latest.slice(0, 5).map((v, i) => `${i + 1}. ${escHtml(v.title || "Untitled")}`).join("\n")}` : ""}`,
 
     () =>
-      `🌟 *Jadi Member VIP BigPekob!*\n\n` +
+      `🌟 <b>Jadi Member VIP BigPekob!</b>\n\n` +
       `Cuma 100 Telegram Stars = 30 hari akses VIP:\n` +
       `• ⬇️ Download semua video\n` +
       `• 📸 Akses PAP eksklusif\n` +
-      `• 💬 Pilih gender di @${CHAT_BOT_MD}\n\n` +
+      `• 💬 Pilih gender di @${CHAT_BOT}\n\n` +
       `🔥 Upgrade sekarang di @${BIGPEKOB_BOT}${videoList}`,
 
     () =>
-      `💬 *Chat Anonim di BigPekob!*\n\n` +
-      `Ketemu stranger baru setiap saat di @${CHAT_BOT_MD}\n\n` +
+      `💬 <b>Chat Anonim di BigPekob!</b>\n\n` +
+      `Ketemu stranger baru setiap saat di @${CHAT_BOT}\n\n` +
       `🎭 Identitas 100% terjaga\n` +
       `🔍 Cari pasangan chat random\n` +
       `🌟 VIP: pilih gender lawan chat\n\n` +
@@ -106,7 +98,7 @@ async function postToChannel() {
   const result = await callAPI("sendMessage", {
     chat_id: channel.channelId,
     text,
-    parse_mode: "Markdown",
+    parse_mode: "HTML",
     reply_markup: JSON.stringify({
       inline_keyboard: [
         [{ text: "🎬 Buka BigPekob", url: `https://t.me/${BIGPEKOB_BOT}` }],
@@ -121,7 +113,6 @@ async function postToChannel() {
   }
 }
 
-// ─── Setup ────────────────────────────────────────────────────────────────────
 export async function setupTelegramWebhook() {
   if (!TOKEN) {
     console.warn("[telegram] TELEGRAM_BOT_TOKEN belum diset");
@@ -159,23 +150,20 @@ export async function setupTelegramWebhook() {
     },
   });
 
-  // Posting setiap jam
   setInterval(postToChannel, 60 * 60 * 1000);
-  // Posting pertama setelah 2 menit
   setTimeout(postToChannel, 2 * 60 * 1000);
 
   console.log(`[telegram] Webhook aktif: ${WEBHOOK_URL}`);
 }
 
-// ─── Menu utama ───────────────────────────────────────────────────────────────
 async function sendMainMenu(chatId: number, firstName?: string) {
   await callAPI("sendMessage", {
     chat_id: chatId,
     text:
-      `🔞 *BigPekob* — Video Indo Viral 18+ 🔥\n\n` +
-      (firstName ? `Halo *${firstName}*! ` : "") +
+      `🔞 <b>BigPekob</b> — Video Indo Viral 18+ 🔥\n\n` +
+      (firstName ? `Halo <b>${escHtml(firstName)}</b>! ` : "") +
       `Pilih menu:`,
-    parse_mode: "Markdown",
+    parse_mode: "HTML",
     reply_markup: JSON.stringify({
       inline_keyboard: [
         [{ text: "🎬 Buka BigPekob Mini App", web_app: { url: MINI_APP_URL } }],
@@ -193,7 +181,6 @@ async function sendMainMenu(chatId: number, firstName?: string) {
   });
 }
 
-// ─── Minta pilih gender ───────────────────────────────────────────────────────
 async function askGender(chatId: number) {
   await callAPI("sendMessage", {
     chat_id: chatId,
@@ -209,7 +196,6 @@ async function askGender(chatId: number) {
   });
 }
 
-// ─── VIP invoice ──────────────────────────────────────────────────────────────
 async function sendVipInvoice(chatId: number) {
   await callAPI("sendInvoice", {
     chat_id: chatId,
@@ -227,8 +213,8 @@ async function sendVipInfo(chatId: number, telegramId: number) {
     await callAPI("sendMessage", {
       chat_id: chatId,
       text:
-        "🌟 *Kamu sudah VIP BigPekob!*\n\n✅ Aktif:\n• Download video di Mini App\n• Akses PAP eksklusif\n• Pilih gender di @" + CHAT_BOT_MD,
-      parse_mode: "Markdown",
+        "🌟 <b>Kamu sudah VIP BigPekob!</b>\n\n✅ Aktif:\n• Download video di Mini App\n• Akses PAP eksklusif\n• Pilih gender di @" + CHAT_BOT,
+      parse_mode: "HTML",
       reply_markup: JSON.stringify({
         inline_keyboard: [[{ text: "🎬 Buka BigPekob", web_app: { url: MINI_APP_URL } }]],
       }),
@@ -238,19 +224,18 @@ async function sendVipInfo(chatId: number, telegramId: number) {
   await callAPI("sendMessage", {
     chat_id: chatId,
     text:
-      "🌟 *Upgrade ke VIP BigPekob!*\n\n" +
+      "🌟 <b>Upgrade ke VIP BigPekob!</b>\n\n" +
       "Yang kamu dapat:\n• ⬇️ Download semua video\n• 📸 Akses PAP eksklusif\n• 💬 Pilih gender lawan chat di @" +
-      CHAT_BOT_MD +
+      CHAT_BOT +
       "\n• ✅ Aktif 30 hari\n\n" +
-      `💰 Harga: *${VIP_STARS_PRICE} Telegram Stars*\n\nKlik tombol untuk bayar:`,
-    parse_mode: "Markdown",
+      `💰 Harga: <b>${VIP_STARS_PRICE} Telegram Stars</b>\n\nKlik tombol untuk bayar:`,
+    parse_mode: "HTML",
     reply_markup: JSON.stringify({
       inline_keyboard: [[{ text: `🌟 Beli VIP — ${VIP_STARS_PRICE} Stars`, callback_data: "buy_vip" }]],
     }),
   });
 }
 
-// ─── PAP menu ─────────────────────────────────────────────────────────────────
 async function sendPapMenu(chatId: number, telegramId: number) {
   const tgUser = await storage.getTelegramUser(telegramId);
   if (!tgUser?.gender) { await askGender(chatId); return; }
@@ -264,12 +249,12 @@ async function sendPapMenu(chatId: number, telegramId: number) {
   await callAPI("sendMessage", {
     chat_id: chatId,
     text:
-      `📸 *Menu PAP BigPekob* 🔞\n\n` +
-      `Gender kamu: ${genderEmoji} *${genderLabel}*\n\n` +
-      `• *Donasi PAP* → kontenmu dilihat ${oppositeLabel}\n` +
-      `• *Lihat PAP* → lihat PAP dari ${oppositeLabel}\n\n` +
-      `⚠️ _Privasi 100% terjaga. Identitas tidak pernah diungkapkan._`,
-    parse_mode: "Markdown",
+      `📸 <b>Menu PAP BigPekob</b> 🔞\n\n` +
+      `Gender kamu: ${genderEmoji} <b>${genderLabel}</b>\n\n` +
+      `• <b>Donasi PAP</b> → kontenmu dilihat ${oppositeLabel}\n` +
+      `• <b>Lihat PAP</b> → lihat PAP dari ${oppositeLabel}\n\n` +
+      `⚠️ <i>Privasi 100% terjaga. Identitas tidak pernah diungkapkan.</i>`,
+    parse_mode: "HTML",
     reply_markup: JSON.stringify({
       inline_keyboard: [
         [{ text: `${genderEmoji} Donasi PAP Saya`, callback_data: "pap_donate" }],
@@ -296,8 +281,8 @@ async function sendPapContent(chatId: number, telegramId: number) {
   const oppositeGender = tgUser.gender === "male" ? "Perempuan" : "Laki-laki";
   await callAPI("sendMessage", {
     chat_id: chatId,
-    text: `🔥 *PAP ${oppositeGender} Eksklusif* (${donations.length} konten)\n\n_Identitas pengirim dirahasiakan 🔒_`,
-    parse_mode: "Markdown",
+    text: `🔥 <b>PAP ${oppositeGender} Eksklusif</b> (${donations.length} konten)\n\n<i>Identitas pengirim dirahasiakan 🔒</i>`,
+    parse_mode: "HTML",
   });
 
   for (const d of donations.slice(0, 5)) {
@@ -311,37 +296,33 @@ async function sendPapContent(chatId: number, telegramId: number) {
   }
 }
 
-// ─── Bantuan ──────────────────────────────────────────────────────────────────
 async function sendHelp(chatId: number) {
   await callAPI("sendMessage", {
     chat_id: chatId,
     text:
-      "📖 *Perintah BigPekob Bot:*\n\n" +
-      "/start — Menu utama & Mini App\n" +
+      "📖 <b>Perintah BigPekob Bot:</b>\n\n" +
+      "/start — Menu utama &amp; Mini App\n" +
       "/vip — Upgrade VIP\n" +
-      "/pap — Donasi & lihat PAP 18+\n" +
+      "/pap — Donasi &amp; lihat PAP 18+\n" +
       "/chatkechannel — Kirim pesan ke channel\n" +
       "/help — Bantuan ini\n\n" +
-      `👥 Chat anonim: @${CHAT_BOT_MD}\n\n` +
-      "⚠️ _Konten 18+. Dilarang di bawah umur._",
-    parse_mode: "Markdown",
+      `👥 Chat anonim: @${CHAT_BOT}\n\n` +
+      "⚠️ <i>Konten 18+. Dilarang di bawah umur.</i>",
+    parse_mode: "HTML",
     reply_markup: JSON.stringify({
       inline_keyboard: [[{ text: "🎬 Buka BigPekob", web_app: { url: MINI_APP_URL } }]],
     }),
   });
 }
 
-// ─── Handle update utama ──────────────────────────────────────────────────────
 export async function handleTelegramUpdate(body: any) {
   if (!TOKEN) return;
 
-  // Pre-checkout Stars
   if (body.pre_checkout_query) {
     await callAPI("answerPreCheckoutQuery", { pre_checkout_query_id: body.pre_checkout_query.id, ok: true });
     return;
   }
 
-  // Pembayaran Stars berhasil
   if (body.message?.successful_payment) {
     const msg = body.message;
     const chatId: number = msg.chat.id;
@@ -352,13 +333,13 @@ export async function handleTelegramUpdate(body: any) {
       await callAPI("sendMessage", {
         chat_id: chatId,
         text:
-          "🌟 *Selamat! Kamu sekarang VIP BigPekob!*\n\n" +
+          "🌟 <b>Selamat! Kamu sekarang VIP BigPekob!</b>\n\n" +
           "✅ Aktif 30 hari:\n• Download video\n• PAP eksklusif\n• Pilih gender di @" +
-          CHAT_BOT_MD +
-          "\n\n_Aktif sampai: " +
+          CHAT_BOT +
+          "\n\n<i>Aktif sampai: " +
           expiresAt.toLocaleDateString("id-ID") +
-          "_",
-        parse_mode: "Markdown",
+          "</i>",
+        parse_mode: "HTML",
         reply_markup: JSON.stringify({
           inline_keyboard: [[{ text: "🎬 Buka BigPekob", web_app: { url: MINI_APP_URL } }]],
         }),
@@ -367,7 +348,6 @@ export async function handleTelegramUpdate(body: any) {
     return;
   }
 
-  // Callback query
   if (body.callback_query) {
     const query = body.callback_query;
     const chatId: number = query.message.chat.id;
@@ -385,8 +365,8 @@ export async function handleTelegramUpdate(body: any) {
       awaitingChannelMsg.add(tgId);
       await callAPI("sendMessage", {
         chat_id: chatId,
-        text: "💬 *Kirim Pesan ke Channel BigPekob*\n\nTulis pesan kamu sekarang. Pesan akan dikirim sebagai pesan anonim ke channel BigPekob.",
-        parse_mode: "Markdown",
+        text: "💬 <b>Kirim Pesan ke Channel BigPekob</b>\n\nTulis pesan kamu sekarang. Pesan akan dikirim sebagai pesan anonim ke channel BigPekob.",
+        parse_mode: "HTML",
       });
       return;
     }
@@ -398,9 +378,9 @@ export async function handleTelegramUpdate(body: any) {
       await callAPI("sendMessage", {
         chat_id: chatId,
         text:
-          `📸 *Donasi PAP ${tgUser.gender === "male" ? "Laki-laki" : "Perempuan"}*\n\nKirim foto atau video PAP kamu (+ caption opsional).\n\n` +
-          `⚠️ _Kontenmu dilihat oleh member ${opp}. Identitas TIDAK diungkapkan._\n\nKirim sekarang:`,
-        parse_mode: "Markdown",
+          `📸 <b>Donasi PAP ${tgUser.gender === "male" ? "Laki-laki" : "Perempuan"}</b>\n\nKirim foto atau video PAP kamu (+ caption opsional).\n\n` +
+          `⚠️ <i>Kontenmu dilihat oleh member ${opp}. Identitas TIDAK diungkapkan.</i>\n\nKirim sekarang:`,
+        parse_mode: "HTML",
       });
       return;
     }
@@ -408,20 +388,19 @@ export async function handleTelegramUpdate(body: any) {
     if (data === "pap_change_gender") { await askGender(chatId); return; }
     if (data === "set_gender_male") {
       await storage.upsertTelegramUser({ telegramId: tgId, gender: "male" });
-      await callAPI("sendMessage", { chat_id: chatId, text: "✅ Gender: 👨 *Laki-laki*", parse_mode: "Markdown" });
+      await callAPI("sendMessage", { chat_id: chatId, text: "✅ Gender: 👨 <b>Laki-laki</b>", parse_mode: "HTML" });
       await sendPapMenu(chatId, tgId);
       return;
     }
     if (data === "set_gender_female") {
       await storage.upsertTelegramUser({ telegramId: tgId, gender: "female" });
-      await callAPI("sendMessage", { chat_id: chatId, text: "✅ Gender: 👩 *Perempuan*", parse_mode: "Markdown" });
+      await callAPI("sendMessage", { chat_id: chatId, text: "✅ Gender: 👩 <b>Perempuan</b>", parse_mode: "HTML" });
       await sendPapMenu(chatId, tgId);
       return;
     }
     return;
   }
 
-  // Pesan biasa
   const msg = body.message || body.edited_message;
   if (!msg) return;
 
@@ -435,7 +414,6 @@ export async function handleTelegramUpdate(body: any) {
 
   await storage.upsertTelegramUser({ telegramId: tgId, firstName, username });
 
-  // ── Sedang menunggu pesan untuk channel ──────────────────────────────────
   if (awaitingChannelMsg.has(tgId) && text && !text.startsWith("/")) {
     awaitingChannelMsg.delete(tgId);
     const channel = await storage.getChannelConfig();
@@ -445,8 +423,8 @@ export async function handleTelegramUpdate(body: any) {
     }
     const sent = await callAPI("sendMessage", {
       chat_id: channel.channelId,
-      text: `💬 *Pesan dari Member BigPekob:*\n\n${text}`,
-      parse_mode: "Markdown",
+      text: `💬 <b>Pesan dari Member BigPekob:</b>\n\n${escHtml(text)}`,
+      parse_mode: "HTML",
     });
     if (sent.ok) {
       await callAPI("sendMessage", {
@@ -459,7 +437,6 @@ export async function handleTelegramUpdate(body: any) {
     return;
   }
 
-  // ── Sedang menunggu media PAP ─────────────────────────────────────────────
   if (papAwaitingMedia.has(tgId)) {
     let fileId: string | null = null;
     let mediaType: string | null = null;
@@ -474,26 +451,25 @@ export async function handleTelegramUpdate(body: any) {
       const opp = gender === "male" ? "Perempuan" : "Laki-laki";
       await callAPI("sendMessage", {
         chat_id: chatId,
-        text: `✅ *PAP berhasil dikirim!*\n\nTerima kasih! Kontenmu bisa dilihat oleh member ${opp} 🔥\n\n⚠️ _Privasi 100% terjaga._`,
-        parse_mode: "Markdown",
+        text: `✅ <b>PAP berhasil dikirim!</b>\n\nTerima kasih! Kontenmu bisa dilihat oleh member ${opp} 🔥\n\n⚠️ <i>Privasi 100% terjaga.</i>`,
+        parse_mode: "HTML",
         reply_markup: JSON.stringify({ inline_keyboard: [[{ text: "📸 Kembali ke PAP", callback_data: "menu_pap" }]] }),
       });
       return;
     } else if (!msg.photo && !msg.video) {
-      await callAPI("sendMessage", { chat_id: chatId, text: "⚠️ Kirim *foto* atau *video*, bukan teks.", parse_mode: "Markdown" });
+      await callAPI("sendMessage", { chat_id: chatId, text: "⚠️ Kirim <b>foto</b> atau <b>video</b>, bukan teks.", parse_mode: "HTML" });
       return;
     }
   }
 
-  // ── Commands ──────────────────────────────────────────────────────────────
   if (text.startsWith("/start")) {
     const tgUser = await storage.getTelegramUser(tgId);
     if (!tgUser?.gender) {
       await callAPI("sendMessage", {
         chat_id: chatId,
         text:
-          `🔞 *Selamat datang di BigPekob!*${firstName ? ` Halo ${firstName}!` : ""}\n\nVideo indo viral 18+ 🔥\n\nSebelum mulai, pilih jenis kelamin kamu:`,
-        parse_mode: "Markdown",
+          `🔞 <b>Selamat datang di BigPekob!</b>${firstName ? ` Halo ${firstName}!` : ""}\n\nVideo indo viral 18+ 🔥\n\nSebelum mulai, pilih jenis kelamin kamu:`,
+        parse_mode: "HTML",
         reply_markup: JSON.stringify({
           inline_keyboard: [[
             { text: "👨 Laki-laki", callback_data: "set_gender_male" },
@@ -515,28 +491,27 @@ export async function handleTelegramUpdate(body: any) {
     awaitingChannelMsg.add(tgId);
     await callAPI("sendMessage", {
       chat_id: chatId,
-      text: "💬 *Kirim Pesan ke Channel BigPekob*\n\nTulis pesan kamu sekarang. Pesanmu dikirim anonim ke channel.",
-      parse_mode: "Markdown",
+      text: "💬 <b>Kirim Pesan ke Channel BigPekob</b>\n\nTulis pesan kamu sekarang. Pesanmu dikirim anonim ke channel.",
+      parse_mode: "HTML",
     });
     return;
   }
 
-  // Admin commands
   if (text.startsWith("/setchannel")) {
     const parts = text.trim().split(/\s+/);
     if (parts.length < 2) {
       await callAPI("sendMessage", {
         chat_id: chatId,
-        text: "Gunakan: `/setchannel @NamaChannel` atau `/setchannel -100xxxxxxxxxx`\n\nPastikan bot sudah jadi admin di channel.",
-        parse_mode: "Markdown",
+        text: "Gunakan: <code>/setchannel @NamaChannel</code> atau <code>/setchannel -100xxxxxxxxxx</code>\n\nPastikan bot sudah jadi admin di channel.",
+        parse_mode: "HTML",
       });
       return;
     }
     await storage.setChannelConfig(parts[1]);
     await callAPI("sendMessage", {
       chat_id: chatId,
-      text: `✅ Channel *${parts[1]}* didaftarkan! Bot akan posting setiap jam.`,
-      parse_mode: "Markdown",
+      text: `✅ Channel <b>${escHtml(parts[1])}</b> didaftarkan! Bot akan posting setiap jam.`,
+      parse_mode: "HTML",
     });
     setTimeout(postToChannel, 3000);
     return;
@@ -548,6 +523,5 @@ export async function handleTelegramUpdate(body: any) {
     return;
   }
 
-  // Default
   await sendMainMenu(chatId, firstName);
 }

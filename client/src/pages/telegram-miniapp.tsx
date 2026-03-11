@@ -235,7 +235,7 @@ function TGVideoCard({
         muted={isMuted}
         playsInline
         onClick={togglePlay}
-        preload="auto"
+        preload={isActive ? "auto" : "metadata"}
         data-testid={`tg-video-${video.id}`}
       />
 
@@ -853,9 +853,11 @@ function AuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
 export default function TelegramMiniApp() {
   const [tab, setTab] = useState<Tab>("feed");
   const [showAuth, setShowAuth] = useState(false);
+  const [autoLoginDone, setAutoLoginDone] = useState(false);
   const queryClient = useQueryClient();
 
-  const telegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+  const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+  const telegramId = tgUser?.id;
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
@@ -864,6 +866,37 @@ export default function TelegramMiniApp() {
       tg.expand();
     }
   }, []);
+
+  useEffect(() => {
+    if (!telegramId || autoLoginDone) return;
+    setAutoLoginDone(true);
+    (async () => {
+      try {
+        const meRes = await fetch("/api/auth/me", { credentials: "include" });
+        if (meRes.ok) {
+          const meData = await meRes.json();
+          queryClient.setQueryData(["/api/auth/me"], meData);
+          return;
+        }
+        const res = await fetch("/api/auth/telegram", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            initData: window.Telegram?.WebApp?.initData || "",
+            telegramId,
+            firstName: tgUser?.first_name,
+            username: tgUser?.username,
+            photoUrl: tgUser?.photo_url,
+          }),
+        });
+        if (res.ok) {
+          const userData = await res.json();
+          queryClient.setQueryData(["/api/auth/me"], userData);
+        }
+      } catch {}
+    })();
+  }, [telegramId, autoLoginDone]);
 
   const { data: user } = useQuery<User | null>({
     queryKey: ["/api/auth/me"],
@@ -893,7 +926,17 @@ export default function TelegramMiniApp() {
     await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     queryClient.setQueryData(["/api/auth/me"], null);
     queryClient.invalidateQueries({ queryKey: ["/api/videos"] });
+    setAutoLoginDone(false);
     setTab("feed");
+  };
+
+  const handleNeedLogin = () => {
+    if (telegramId && !autoLoginDone) return;
+    if (telegramId) {
+      setAutoLoginDone(false);
+      return;
+    }
+    setShowAuth(true);
   };
 
   const tabs: { key: Tab; icon: typeof Home; label: string }[] = [
@@ -904,20 +947,18 @@ export default function TelegramMiniApp() {
 
   return (
     <div className="w-full h-screen bg-black overflow-hidden relative flex flex-col">
-      {/* Content area */}
       <div className="flex-1 overflow-hidden relative">
         <div className={tab === "feed" ? "block w-full h-full" : "hidden"}>
-          <FeedTab user={user} onNeedLogin={() => setShowAuth(true)} isVip={isVip} telegramId={telegramId} />
+          <FeedTab user={user} onNeedLogin={handleNeedLogin} isVip={isVip} telegramId={telegramId} />
         </div>
         <div className={tab === "upload" ? "block w-full h-full" : "hidden"}>
-          <UploadTab user={user} onNeedLogin={() => { setShowAuth(true); }} />
+          <UploadTab user={user} onNeedLogin={handleNeedLogin} />
         </div>
         <div className={tab === "profile" ? "block w-full h-full" : "hidden"}>
-          <ProfileTab user={user} onNeedLogin={() => setShowAuth(true)} onLogout={handleLogout} />
+          <ProfileTab user={user} onNeedLogin={handleNeedLogin} onLogout={handleLogout} />
         </div>
       </div>
 
-      {/* Bottom navigation */}
       <div className="flex-shrink-0 bg-zinc-950 border-t border-zinc-800 flex items-center safe-area-bottom">
         {tabs.map(({ key, icon: Icon, label }) => (
           <button
@@ -935,7 +976,7 @@ export default function TelegramMiniApp() {
         ))}
       </div>
 
-      {showAuth && (
+      {showAuth && !telegramId && (
         <AuthModal onClose={() => setShowAuth(false)} onSuccess={() => setShowAuth(false)} />
       )}
     </div>

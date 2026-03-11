@@ -35,20 +35,20 @@ const LANGS: Record<L, string> = {
 
 const T: Record<string, Record<L, string | ((a: any, b?: any, c?: any) => string)>> = {
   selectLang: {
-    id: "🌐 *Pilih bahasa kamu:*",
-    en: "🌐 *Choose your language:*",
-    ar: "🌐 *اختر لغتك:*",
-    jp: "🌐 *言語を選んでください：*",
-    kr: "🌐 *언어를 선택하세요:*",
-    fr: "🌐 *Choisissez votre langue :*",
+    id: "🌐 <b>Pilih bahasa kamu:</b>",
+    en: "🌐 <b>Choose your language:</b>",
+    ar: "🌐 <b>اختر لغتك:</b>",
+    jp: "🌐 <b>言語を選んでください：</b>",
+    kr: "🌐 <b>언어를 선택하세요:</b>",
+    fr: "🌐 <b>Choisissez votre langue :</b>",
   },
   welcome: {
-    id: (n: string) => `👥 *BigPekob Chat*${n ? ` — Halo ${n}!` : ""}\n\n🎭 Chat anonim dengan stranger 18+\n🔒 Identitas kamu 100% terjaga\n📊 Limit pencarian: 100x/hari`,
-    en: (n: string) => `👥 *BigPekob Chat*${n ? ` — Hi ${n}!` : ""}\n\n🎭 Anonymous chat with strangers 18+\n🔒 Your identity is 100% private\n📊 Search limit: 100x/day`,
-    ar: (n: string) => `👥 *BigPekob Chat*${n ? ` — مرحباً ${n}!` : ""}\n\n🎭 دردشة مجهولة +18\n🔒 هويتك محمية 100%\n📊 حد البحث: 100/يوم`,
-    jp: (n: string) => `👥 *BigPekob Chat*${n ? ` — こんにちは ${n}！` : ""}\n\n🎭 18歳以上の匿名チャット\n🔒 身元は100%秘密\n📊 検索制限: 100回/日`,
-    kr: (n: string) => `👥 *BigPekob Chat*${n ? ` — 안녕하세요 ${n}!` : ""}\n\n🎭 18+ 익명 채팅\n🔒 신원 100% 보호\n📊 검색 한도: 100회/일`,
-    fr: (n: string) => `👥 *BigPekob Chat*${n ? ` — Bonjour ${n} !` : ""}\n\n🎭 Chat anonyme 18+\n🔒 Identité 100% protégée\n📊 Limite de recherche : 100x/jour`,
+    id: (n: string) => `👥 <b>BigPekob Chat</b>${n ? ` — Halo ${n}!` : ""}\n\n🎭 Chat anonim dengan stranger 18+\n🔒 Identitas kamu 100% terjaga\n📊 Limit pencarian: 100x/hari`,
+    en: (n: string) => `👥 <b>BigPekob Chat</b>${n ? ` — Hi ${n}!` : ""}\n\n🎭 Anonymous chat with strangers 18+\n🔒 Your identity is 100% private\n📊 Search limit: 100x/day`,
+    ar: (n: string) => `👥 <b>BigPekob Chat</b>${n ? ` — مرحباً ${n}!` : ""}\n\n🎭 دردشة مجهولة +18\n🔒 هويتك محمية 100%\n📊 حد البحث: 100/يوم`,
+    jp: (n: string) => `👥 <b>BigPekob Chat</b>${n ? ` — こんにちは ${n}！` : ""}\n\n🎭 18歳以上の匿名チャット\n🔒 身元は100%秘密\n📊 検索制限: 100回/日`,
+    kr: (n: string) => `👥 <b>BigPekob Chat</b>${n ? ` — 안녕하세요 ${n}!` : ""}\n\n🎭 18+ 익명 채팅\n🔒 신원 100% 보호\n📊 검색 한도: 100회/일`,
+    fr: (n: string) => `👥 <b>BigPekob Chat</b>${n ? ` — Bonjour ${n} !` : ""}\n\n🎭 Chat anonyme 18+\n🔒 Identité 100% protégée\n📊 Limite de recherche : 100x/jour`,
   },
   btnSearch: { id: "🔍 Cari Pasangan", en: "🔍 Find Partner", ar: "🔍 بحث عن شريك", jp: "🔍 パートナー探す", kr: "🔍 파트너 찾기", fr: "🔍 Trouver" },
   btnProfile: { id: "⚙️ Profil", en: "⚙️ Profile", ar: "⚙️ الملف الشخصي", jp: "⚙️ プロフィール", kr: "⚙️ 프로필", fr: "⚙️ Profil" },
@@ -57,28 +57,28 @@ const T: Record<string, Record<L, string | ((a: any, b?: any, c?: any) => string
   btnFindAgain: { id: "🔍 Cari Lagi", en: "🔍 Find Again", ar: "🔍 بحث مجدداً", jp: "🔍 再度探す", kr: "🔍 다시 찾기", fr: "🔍 Chercher encore" },
   btnChangeLang: { id: "🌐 Ganti Bahasa", en: "🌐 Change Language", ar: "🌐 تغيير اللغة", jp: "🌐 言語変更", kr: "🌐 언어 변경", fr: "🌐 Changer langue" },
   searching: {
-    id: (r: number) => `⏳ *Sedang mencari pasangan...*\n\nTunggu sebentar ya! Sisa pencarian hari ini: *${r}x*\n\nKetik /stop untuk berhenti.`,
-    en: (r: number) => `⏳ *Searching for a partner...*\n\nPlease wait! Searches left today: *${r}x*\n\nType /stop to cancel.`,
-    ar: (r: number) => `⏳ *جارٍ البحث عن شريك...*\n\nانتظر قليلاً! متبقٍّ اليوم: *${r}x*\n\nاكتب /stop للإلغاء.`,
-    jp: (r: number) => `⏳ *パートナーを検索中...*\n\n本日の残り検索: *${r}回*\n\n/stopでキャンセル。`,
-    kr: (r: number) => `⏳ *파트너를 찾는 중...*\n\n오늘 남은 검색: *${r}회*\n\n/stop으로 취소.`,
-    fr: (r: number) => `⏳ *Recherche d'un partenaire...*\n\nRecherches restantes aujourd'hui : *${r}x*\n\nTapez /stop pour annuler.`,
+    id: (r: number) => `⏳ <b>Sedang mencari pasangan...</b>\n\nTunggu sebentar ya! Sisa pencarian hari ini: <b>${r}x</b>\n\nKetik /stop untuk berhenti.`,
+    en: (r: number) => `⏳ <b>Searching for a partner...</b>\n\nPlease wait! Searches left today: <b>${r}x</b>\n\nType /stop to cancel.`,
+    ar: (r: number) => `⏳ <b>جارٍ البحث عن شريك...</b>\n\nانتظر قليلاً! متبقٍّ اليوم: <b>${r}x</b>\n\nاكتب /stop للإلغاء.`,
+    jp: (r: number) => `⏳ <b>パートナーを検索中...</b>\n\n本日の残り検索: <b>${r}回</b>\n\n/stopでキャンセル。`,
+    kr: (r: number) => `⏳ <b>파트너를 찾는 중...</b>\n\n오늘 남은 검색: <b>${r}회</b>\n\n/stop으로 취소.`,
+    fr: (r: number) => `⏳ <b>Recherche d'un partenaire...</b>\n\nRecherches restantes aujourd'hui : <b>${r}x</b>\n\nTapez /stop pour annuler.`,
   },
   partnerFound: {
-    id: "✅ *Pasangan ditemukan!* 🎉\n\n🎭 Terhubung dengan stranger anonim.\n🔒 Identitas 100% rahasia.\n\nMulai ngobrol! /stop untuk akhiri.",
-    en: "✅ *Partner found!* 🎉\n\n🎭 Connected with an anonymous stranger.\n🔒 Identities 100% secret.\n\nStart chatting! /stop to end.",
-    ar: "✅ *تم العثور على شريك!* 🎉\n\n🎭 متصل مع شخص مجهول.\n🔒 الهوية محمية 100%.\n\nابدأ الدردشة! /stop للإنهاء.",
-    jp: "✅ *パートナーが見つかりました！* 🎉\n\n🎭 匿名の見知らぬ人と接続。\n🔒 身元100%秘密。\n\nチャット開始！/stopで終了。",
-    kr: "✅ *파트너를 찾았습니다!* 🎉\n\n🎭 익명의 낯선 사람과 연결됨.\n🔒 신원 100% 비밀.\n\n채팅 시작! /stop으로 종료.",
-    fr: "✅ *Partenaire trouvé !* 🎉\n\n🎭 Connecté avec un inconnu anonyme.\n🔒 Identités 100% secrètes.\n\nCommencez ! /stop pour terminer.",
+    id: "✅ <b>Pasangan ditemukan!</b> 🎉\n\n🎭 Terhubung dengan stranger anonim.\n🔒 Identitas 100% rahasia.\n\nMulai ngobrol! /stop untuk akhiri.",
+    en: "✅ <b>Partner found!</b> 🎉\n\n🎭 Connected with an anonymous stranger.\n🔒 Identities 100% secret.\n\nStart chatting! /stop to end.",
+    ar: "✅ <b>تم العثور على شريك!</b> 🎉\n\n🎭 متصل مع شخص مجهول.\n🔒 الهوية محمية 100%.\n\nابدأ الدردشة! /stop للإنهاء.",
+    jp: "✅ <b>パートナーが見つかりました！</b> 🎉\n\n🎭 匿名の見知らぬ人と接続。\n🔒 身元100%秘密。\n\nチャット開始！/stopで終了。",
+    kr: "✅ <b>파트너를 찾았습니다!</b> 🎉\n\n🎭 익명의 낯선 사람과 연결됨.\n🔒 신원 100% 비밀.\n\n채팅 시작! /stop으로 종료.",
+    fr: "✅ <b>Partenaire trouvé !</b> 🎉\n\n🎭 Connecté avec un inconnu anonyme.\n🔒 Identités 100% secrètes.\n\nCommencez ! /stop pour terminer.",
   },
   limitReached: {
-    id: `⛔ *Limit harian tercapai!*\n\nKamu sudah 100x mencari hari ini. Coba lagi besok!\n\n🌟 _Upgrade VIP di @bigpekob_bot untuk akses lebih!_`,
-    en: `⛔ *Daily limit reached!*\n\nYou've done 100 searches today. Try again tomorrow!\n\n🌟 _Upgrade VIP at @bigpekob_bot for more!_`,
-    ar: `⛔ *تم الوصول إلى الحد اليومي!*\n\n100 بحث اليوم. حاول غداً!\n\n🌟 _رقّ إلى VIP في @bigpekob_bot!_`,
-    jp: `⛔ *1日の上限に達しました！*\n\n本日100回の検索を行いました。明日また！\n\n🌟 _@bigpekob_botでVIPにアップグレード！_`,
-    kr: `⛔ *일일 한도 도달!*\n\n오늘 100회 검색했습니다. 내일 다시!\n\n🌟 _@bigpekob_bot에서 VIP 업그레이드!_`,
-    fr: `⛔ *Limite quotidienne atteinte !*\n\n100 recherches aujourd'hui. Réessayez demain !\n\n🌟 _Passez VIP sur @bigpekob_bot !_`,
+    id: `⛔ <b>Limit harian tercapai!</b>\n\nKamu sudah 100x mencari hari ini. Coba lagi besok!\n\n🌟 <i>Upgrade VIP di @bigpekob_bot untuk akses lebih!</i>`,
+    en: `⛔ <b>Daily limit reached!</b>\n\nYou've done 100 searches today. Try again tomorrow!\n\n🌟 <i>Upgrade VIP at @bigpekob_bot for more!</i>`,
+    ar: `⛔ <b>تم الوصول إلى الحد اليومي!</b>\n\n100 بحث اليوم. حاول غداً!\n\n🌟 <i>رقّ إلى VIP في @bigpekob_bot!</i>`,
+    jp: `⛔ <b>1日の上限に達しました！</b>\n\n本日100回の検索を行いました。明日また！\n\n🌟 <i>@bigpekob_botでVIPにアップグレード！</i>`,
+    kr: `⛔ <b>일일 한도 도달!</b>\n\n오늘 100회 검색했습니다. 내일 다시!\n\n🌟 <i>@bigpekob_bot에서 VIP 업그레이드!</i>`,
+    fr: `⛔ <b>Limite quotidienne atteinte !</b>\n\n100 recherches aujourd'hui. Réessayez demain !\n\n🌟 <i>Passez VIP sur @bigpekob_bot !</i>`,
   },
   alreadyInChat: {
     id: "❌ Kamu sedang dalam chat. Ketik /stop dulu.",
@@ -105,44 +105,44 @@ const T: Record<string, Record<L, string | ((a: any, b?: any, c?: any) => string
     fr: "⏳ Toujours en recherche... /stop pour annuler.",
   },
   chatEnded: {
-    id: "👋 *Chat diakhiri.*\n\nKetik /cari untuk chat dengan stranger baru! 😊",
-    en: "👋 *Chat ended.*\n\nType /cari to chat with a new stranger! 😊",
-    ar: "👋 *انتهت الدردشة.*\n\nاكتب /cari للدردشة مع شخص جديد! 😊",
-    jp: "👋 *チャット終了。*\n\n/cariで新しい人とチャット！ 😊",
-    kr: "👋 *채팅이 종료되었습니다.*\n\n/cari로 새 낯선 사람과 채팅! 😊",
-    fr: "👋 *Chat terminé.*\n\nTapez /cari pour un nouvel inconnu ! 😊",
+    id: "👋 <b>Chat diakhiri.</b>\n\nKetik /cari untuk chat dengan stranger baru! 😊",
+    en: "👋 <b>Chat ended.</b>\n\nType /cari to chat with a new stranger! 😊",
+    ar: "👋 <b>انتهت الدردشة.</b>\n\nاكتب /cari للدردشة مع شخص جديد! 😊",
+    jp: "👋 <b>チャット終了。</b>\n\n/cariで新しい人とチャット！ 😊",
+    kr: "👋 <b>채팅이 종료되었습니다.</b>\n\n/cari로 새 낯선 사람과 채팅! 😊",
+    fr: "👋 <b>Chat terminé.</b>\n\nTapez /cari pour un nouvel inconnu ! 😊",
   },
   vipOnlyGender: {
-    id: "⭐ Fitur gender matching khusus *VIP BigPekob*.\n\nUpgrade di @bigpekob_bot untuk pilih gender lawan chat!",
-    en: "⭐ Gender matching is exclusive to *BigPekob VIP*.\n\nUpgrade at @bigpekob_bot to choose your partner's gender!",
-    ar: "⭐ مطابقة الجنس حصرية لـ *BigPekob VIP*.\n\nرقّ في @bigpekob_bot لاختيار جنس شريكك!",
-    jp: "⭐ 性別マッチングは *BigPekob VIP* 限定です。\n\n@bigpekob_botでVIPにアップグレードして性別を選びましょう！",
-    kr: "⭐ 성별 매칭은 *BigPekob VIP* 전용입니다.\n\n@bigpekob_bot에서 업그레이드하여 상대방 성별을 선택하세요!",
-    fr: "⭐ La correspondance de genre est exclusive à *BigPekob VIP*.\n\nUpgrade sur @bigpekob_bot pour choisir le genre de votre partenaire !",
+    id: "⭐ Fitur gender matching khusus <b>VIP BigPekob</b>.\n\nUpgrade di @bigpekob_bot untuk pilih gender lawan chat!",
+    en: "⭐ Gender matching is exclusive to <b>BigPekob VIP</b>.\n\nUpgrade at @bigpekob_bot to choose your partner's gender!",
+    ar: "⭐ مطابقة الجنس حصرية لـ <b>BigPekob VIP</b>.\n\nرقّ في @bigpekob_bot لاختيار جنس شريكك!",
+    jp: "⭐ 性別マッチングは <b>BigPekob VIP</b> 限定です。\n\n@bigpekob_botでVIPにアップグレードして性別を選びましょう！",
+    kr: "⭐ 성별 매칭은 <b>BigPekob VIP</b> 전용입니다.\n\n@bigpekob_bot에서 업그레이드하여 상대방 성별을 선택하세요!",
+    fr: "⭐ La correspondance de genre est exclusive à <b>BigPekob VIP</b>.\n\nUpgrade sur @bigpekob_bot pour choisir le genre de votre partenaire !",
   },
   setGenderPrompt: {
-    id: "⚙️ *Pilih Gender Kamu (VIP)*\n\nGender ini menentukan siapa yang bisa kamu temui.\n\n👨 Laki-laki = akan dicocokkan dengan perempuan\n👩 Perempuan = akan dicocokkan dengan laki-laki",
-    en: "⚙️ *Set Your Gender (VIP)*\n\nThis determines who you'll be matched with.\n\n👨 Male = matched with female\n👩 Female = matched with male",
-    ar: "⚙️ *اختر جنسك (VIP)*\n\nهذا يحدد مع من ستتم مطابقتك.\n\n👨 ذكر = مطابقة مع أنثى\n👩 أنثى = مطابقة مع ذكر",
-    jp: "⚙️ *性別を設定 (VIP)*\n\n相手の性別が決まります。\n\n👨 男性 = 女性とマッチング\n👩 女性 = 男性とマッチング",
-    kr: "⚙️ *성별 설정 (VIP)*\n\n매칭 상대가 결정됩니다.\n\n👨 남성 = 여성과 매칭\n👩 여성 = 남성과 매칭",
-    fr: "⚙️ *Définir votre genre (VIP)*\n\nCela détermine avec qui vous serez mis en relation.\n\n👨 Homme = mis en relation avec femme\n👩 Femme = mis en relation avec homme",
+    id: "⚙️ <b>Pilih Gender Kamu (VIP)</b>\n\nGender ini menentukan siapa yang bisa kamu temui.\n\n👨 Laki-laki = akan dicocokkan dengan perempuan\n👩 Perempuan = akan dicocokkan dengan laki-laki",
+    en: "⚙️ <b>Set Your Gender (VIP)</b>\n\nThis determines who you'll be matched with.\n\n👨 Male = matched with female\n👩 Female = matched with male",
+    ar: "⚙️ <b>اختر جنسك (VIP)</b>\n\nهذا يحدد مع من ستتم مطابقتك.\n\n👨 ذكر = مطابقة مع أنثى\n👩 أنثى = مطابقة مع ذكر",
+    jp: "⚙️ <b>性別を設定 (VIP)</b>\n\n相手の性別が決まります。\n\n👨 男性 = 女性とマッチング\n👩 女性 = 男性とマッチング",
+    kr: "⚙️ <b>성별 설정 (VIP)</b>\n\n매칭 상대가 결정됩니다.\n\n👨 남성 = 여성과 매칭\n👩 여성 = 남성과 매칭",
+    fr: "⚙️ <b>Définir votre genre (VIP)</b>\n\nCela détermine avec qui vous serez mis en relation.\n\n👨 Homme = mis en relation avec femme\n👩 Femme = mis en relation avec homme",
   },
   genderSetMale: {
-    id: "✅ Gender: 👨 *Laki-laki*\n\nKamu akan dicocokkan dengan perempuan. /cari untuk mulai!",
-    en: "✅ Gender: 👨 *Male*\n\nYou'll be matched with females. /cari to start!",
-    ar: "✅ الجنس: 👨 *ذكر*\n\nستتم مطابقتك مع الإناث. /cari للبدء!",
-    jp: "✅ 性別: 👨 *男性*\n\n女性とマッチングされます。/cariで開始！",
-    kr: "✅ 성별: 👨 *남성*\n\n여성과 매칭됩니다. /cari로 시작!",
-    fr: "✅ Genre: 👨 *Homme*\n\nVous serez mis en relation avec des femmes. /cari pour commencer !",
+    id: "✅ Gender: 👨 <b>Laki-laki</b>\n\nKamu akan dicocokkan dengan perempuan. /cari untuk mulai!",
+    en: "✅ Gender: 👨 <b>Male</b>\n\nYou'll be matched with females. /cari to start!",
+    ar: "✅ الجنس: 👨 <b>ذكر</b>\n\nستتم مطابقتك مع الإناث. /cari للبدء!",
+    jp: "✅ 性別: 👨 <b>男性</b>\n\n女性とマッチングされます。/cariで開始！",
+    kr: "✅ 성별: 👨 <b>남성</b>\n\n여성과 매칭됩니다. /cari로 시작!",
+    fr: "✅ Genre: 👨 <b>Homme</b>\n\nVous serez mis en relation avec des femmes. /cari pour commencer !",
   },
   genderSetFemale: {
-    id: "✅ Gender: 👩 *Perempuan*\n\nKamu akan dicocokkan dengan laki-laki. /cari untuk mulai!",
-    en: "✅ Gender: 👩 *Female*\n\nYou'll be matched with males. /cari to start!",
-    ar: "✅ الجنس: 👩 *أنثى*\n\nستتم مطابقتك مع الذكور. /cari للبدء!",
-    jp: "✅ 性別: 👩 *女性*\n\n男性とマッチングされます。/cariで開始！",
-    kr: "✅ 성별: 👩 *여성*\n\n남성과 매칭됩니다. /cari로 시작!",
-    fr: "✅ Genre: 👩 *Femme*\n\nVous serez mis en relation avec des hommes. /cari pour commencer !",
+    id: "✅ Gender: 👩 <b>Perempuan</b>\n\nKamu akan dicocokkan dengan laki-laki. /cari untuk mulai!",
+    en: "✅ Gender: 👩 <b>Female</b>\n\nYou'll be matched with males. /cari to start!",
+    ar: "✅ الجنس: 👩 <b>أنثى</b>\n\nستتم مطابقتك مع الذكور. /cari للبدء!",
+    jp: "✅ 性別: 👩 <b>女性</b>\n\n男性とマッチングされます。/cariで開始！",
+    kr: "✅ 성별: 👩 <b>여성</b>\n\n남성과 매칭됩니다. /cari로 시작!",
+    fr: "✅ Genre: 👩 <b>Femme</b>\n\nVous serez mis en relation avec des hommes. /cari pour commencer !",
   },
   genderReset: {
     id: "✅ Gender direset ke random. Kamu akan dicocokkan secara acak.",
@@ -165,46 +165,46 @@ const T: Record<string, Record<L, string | ((a: any, b?: any, c?: any) => string
 // Template pesan saat partner pergi (dirotasi, kadang ada promo VIP)
 const partnerLeftMsgs: Record<L, string[]> = {
   id: [
-    "😢 *Yah, pasanganmu pergi...*\n\nStrangermu mengakhiri chat. Tapi jangan sedih, masih banyak stranger lain yang siap ngobrol sama kamu! 😊\n\n/cari untuk cari pasangan baru!",
-    "💔 *Chat berakhir.*\n\nPasanganmu udah cabut nih. Siapa tau percakapan berikutnya lebih seru! Coba lagi yuk 🎉\n\n/cari untuk mulai lagi.",
-    "👻 *Pasanganmu menghilang!*\n\nMisterius banget ya... 😄 Tapi tenang, masih banyak yang menunggumu!\n\n🌟 _Tip: Upgrade VIP di @bigpekob_bot untuk pilih gender lawan chat!_",
-    "🚪 *Pasanganmu keluar dari chat.*\n\nEvery ending is a new beginning! Cari stranger baru dan siapa tau lebih cocok 😉\n\n/cari untuk coba lagi!",
-    "✨ *Chat selesai!*\n\nJangan menyerah! Di luar sana banyak stranger menarik yang nunggu diajak ngobrol 🌟\n\nUpgrade VIP di @bigpekob_bot untuk matching lebih personal!",
+    "😢 <b>Yah, pasanganmu pergi...</b>\n\nStrangermu mengakhiri chat. Tapi jangan sedih, masih banyak stranger lain yang siap ngobrol sama kamu! 😊\n\n/cari untuk cari pasangan baru!",
+    "💔 <b>Chat berakhir.</b>\n\nPasanganmu udah cabut nih. Siapa tau percakapan berikutnya lebih seru! Coba lagi yuk 🎉\n\n/cari untuk mulai lagi.",
+    "👻 <b>Pasanganmu menghilang!</b>\n\nMisterius banget ya... 😄 Tapi tenang, masih banyak yang menunggumu!\n\n🌟 <i>Tip: Upgrade VIP di @bigpekob_bot untuk pilih gender lawan chat!</i>",
+    "🚪 <b>Pasanganmu keluar dari chat.</b>\n\nEvery ending is a new beginning! Cari stranger baru dan siapa tau lebih cocok 😉\n\n/cari untuk coba lagi!",
+    "✨ <b>Chat selesai!</b>\n\nJangan menyerah! Di luar sana banyak stranger menarik yang nunggu diajak ngobrol 🌟\n\nUpgrade VIP di @bigpekob_bot untuk matching lebih personal!",
   ],
   en: [
-    "😢 *Your partner left...*\n\nYour stranger ended the chat. Don't be sad — many others are waiting for you! 😊\n\n/cari to find a new partner!",
-    "💔 *Chat ended.*\n\nYour partner is gone. Maybe the next one will be more fun! 🎉\n\n/cari to try again.",
-    "👻 *Your partner disappeared!*\n\nMystery! 😄 But there are plenty more out there!\n\n🌟 _Tip: Upgrade VIP at @bigpekob_bot to choose your partner's gender!_",
-    "🚪 *Your partner left the chat.*\n\nEvery ending is a new beginning! 😉\n\n/cari to try again!",
-    "✨ *Chat over!*\n\nDon't give up! Upgrade VIP at @bigpekob_bot for more personal matching! 🌟",
+    "😢 <b>Your partner left...</b>\n\nYour stranger ended the chat. Don't be sad — many others are waiting for you! 😊\n\n/cari to find a new partner!",
+    "💔 <b>Chat ended.</b>\n\nYour partner is gone. Maybe the next one will be more fun! 🎉\n\n/cari to try again.",
+    "👻 <b>Your partner disappeared!</b>\n\nMystery! 😄 But there are plenty more out there!\n\n🌟 <i>Tip: Upgrade VIP at @bigpekob_bot to choose your partner's gender!</i>",
+    "🚪 <b>Your partner left the chat.</b>\n\nEvery ending is a new beginning! 😉\n\n/cari to try again!",
+    "✨ <b>Chat over!</b>\n\nDon't give up! Upgrade VIP at @bigpekob_bot for more personal matching! 🌟",
   ],
   ar: [
-    "😢 *غادر شريكك...*\n\nأنهى شريكك الدردشة. لا تحزن — هناك الكثيرون ينتظرونك! 😊\n\n/cari للعثور على شريك جديد!",
-    "💔 *انتهت الدردشة.*\n\nرحل شريكك. ربما القادم أكثر متعة! 🎉\n\n/cari للمحاولة مجدداً.",
-    "👻 *اختفى شريكك!*\n\nغامض! 😄 لكن هناك الكثيرون في الخارج!\n\n🌟 _رقّ إلى VIP في @bigpekob_bot لاختيار الجنس!_",
-    "🚪 *غادر شريكك الدردشة.*\n\nكل نهاية هي بداية جديدة! 😉\n\n/cari للمحاولة!",
-    "✨ *الدردشة منتهية!*\n\n!رقّ VIP لمطابقة أفضل على @bigpekob_bot 🌟",
+    "😢 <b>غادر شريكك...</b>\n\nأنهى شريكك الدردشة. لا تحزن — هناك الكثيرون ينتظرونك! 😊\n\n/cari للعثور على شريك جديد!",
+    "💔 <b>انتهت الدردشة.</b>\n\nرحل شريكك. ربما القادم أكثر متعة! 🎉\n\n/cari للمحاولة مجدداً.",
+    "👻 <b>اختفى شريكك!</b>\n\nغامض! 😄 لكن هناك الكثيرون في الخارج!\n\n🌟 <i>رقّ إلى VIP في @bigpekob_bot لاختيار الجنس!</i>",
+    "🚪 <b>غادر شريكك الدردشة.</b>\n\nكل نهاية هي بداية جديدة! 😉\n\n/cari للمحاولة!",
+    "✨ <b>الدردشة منتهية!</b>\n\nرقّ VIP لمطابقة أفضل على @bigpekob_bot 🌟",
   ],
   jp: [
-    "😢 *パートナーが去りました...*\n\nストレンジャーがチャットを終了しました。悲しまないで！ 😊\n\n/cariで新しいパートナーを！",
-    "💔 *チャット終了。*\n\nパートナーが去りました。次はもっと楽しいかも！ 🎉\n\n/cariで再挑戦。",
-    "👻 *パートナーが消えました！*\n\nミステリアス！ 😄 でも他にもたくさんいます！\n\n🌟 _ヒント: @bigpekob_botでVIPにアップグレードして性別を選ぼう！_",
-    "🚪 *パートナーがチャットを去りました。*\n\nすべての終わりは新しい始まり！ 😉\n\n/cariで再試行！",
-    "✨ *チャット終了！*\n\n@bigpekob_botでVIPにアップグレードして個人的なマッチングを！ 🌟",
+    "😢 <b>パートナーが去りました...</b>\n\nストレンジャーがチャットを終了しました。悲しまないで！ 😊\n\n/cariで新しいパートナーを！",
+    "💔 <b>チャット終了。</b>\n\nパートナーが去りました。次はもっと楽しいかも！ 🎉\n\n/cariで再挑戦。",
+    "👻 <b>パートナーが消えました！</b>\n\nミステリアス！ 😄 でも他にもたくさんいます！\n\n🌟 <i>ヒント: @bigpekob_botでVIPにアップグレードして性別を選ぼう！</i>",
+    "🚪 <b>パートナーがチャットを去りました。</b>\n\nすべての終わりは新しい始まり！ 😉\n\n/cariで再試行！",
+    "✨ <b>チャット終了！</b>\n\n@bigpekob_botでVIPにアップグレードして個人的なマッチングを！ 🌟",
   ],
   kr: [
-    "😢 *파트너가 떠났습니다...*\n\n상대방이 채팅을 종료했습니다. 슬퍼하지 마세요! 😊\n\n/cari로 새 파트너를 찾으세요!",
-    "💔 *채팅이 끝났습니다.*\n\n파트너가 떠났습니다. 다음엔 더 재밌을 거예요! 🎉\n\n/cari로 다시 시도.",
-    "👻 *파트너가 사라졌습니다!*\n\n미스터리! 😄 하지만 다른 많은 분들이 기다리고 있어요!\n\n🌟 _팁: @bigpekob_bot에서 VIP로 성별 선택!_",
-    "🚪 *파트너가 채팅을 떠났습니다.*\n\n모든 끝은 새로운 시작! 😉\n\n/cari로 다시 시도!",
-    "✨ *채팅 종료!*\n\n@bigpekob_bot에서 VIP로 업그레이드하여 더 개인적인 매칭을! 🌟",
+    "😢 <b>파트너가 떠났습니다...</b>\n\n상대방이 채팅을 종료했습니다. 슬퍼하지 마세요! 😊\n\n/cari로 새 파트너를 찾으세요!",
+    "💔 <b>채팅이 끝났습니다.</b>\n\n파트너가 떠났습니다. 다음엔 더 재밌을 거예요! 🎉\n\n/cari로 다시 시도.",
+    "👻 <b>파트너가 사라졌습니다!</b>\n\n미스터리! 😄 하지만 다른 많은 분들이 기다리고 있어요!\n\n🌟 <i>팁: @bigpekob_bot에서 VIP로 성별 선택!</i>",
+    "🚪 <b>파트너가 채팅을 떠났습니다.</b>\n\n모든 끝은 새로운 시작! 😉\n\n/cari로 다시 시도!",
+    "✨ <b>채팅 종료!</b>\n\n@bigpekob_bot에서 VIP로 업그레이드하여 더 개인적인 매칭을! 🌟",
   ],
   fr: [
-    "😢 *Votre partenaire est parti...*\n\nVotre inconnu a terminé le chat. Ne soyez pas triste ! 😊\n\n/cari pour trouver un nouveau partenaire !",
-    "💔 *Chat terminé.*\n\nVotre partenaire est parti. Le prochain sera peut-être plus fun ! 🎉\n\n/cari pour réessayer.",
-    "👻 *Votre partenaire a disparu !*\n\nMystérieux ! 😄 Mais il y en a plein d'autres !\n\n🌟 _Astuce : Passez VIP sur @bigpekob_bot pour choisir le genre !_",
-    "🚪 *Votre partenaire a quitté le chat.*\n\nToute fin est un nouveau début ! 😉\n\n/cari pour réessayer !",
-    "✨ *Chat terminé !*\n\nPassez VIP sur @bigpekob_bot pour un matching plus personnel ! 🌟",
+    "😢 <b>Votre partenaire est parti...</b>\n\nVotre inconnu a terminé le chat. Ne soyez pas triste ! 😊\n\n/cari pour trouver un nouveau partenaire !",
+    "💔 <b>Chat terminé.</b>\n\nVotre partenaire est parti. Le prochain sera peut-être plus fun ! 🎉\n\n/cari pour réessayer.",
+    "👻 <b>Votre partenaire a disparu !</b>\n\nMystérieux ! 😄 Mais il y en a plein d'autres !\n\n🌟 <i>Astuce : Passez VIP sur @bigpekob_bot pour choisir le genre !</i>",
+    "🚪 <b>Votre partenaire a quitté le chat.</b>\n\nToute fin est un nouveau début ! 😉\n\n/cari pour réessayer !",
+    "✨ <b>Chat terminé !</b>\n\nPassez VIP sur @bigpekob_bot pour un matching plus personnel ! 🌟",
   ],
 };
 
@@ -346,7 +346,7 @@ async function stopChat(chatId: number, tgId: number, lang: L) {
     await callAPI("sendMessage", {
       chat_id: partnerId,
       text: getPartnerLeftMsg(partnerLang),
-      parse_mode: "Markdown",
+      parse_mode: "HTML",
       reply_markup: JSON.stringify({
         keyboard: [[{ text: s(partnerLang, "btnFindAgain") }], [{ text: s(partnerLang, "btnProfile") }, { text: s(partnerLang, "btnVip") }]],
         resize_keyboard: true,
@@ -357,7 +357,7 @@ async function stopChat(chatId: number, tgId: number, lang: L) {
   await callAPI("sendMessage", {
     chat_id: chatId,
     text: s(lang, "chatEnded"),
-    parse_mode: "Markdown",
+    parse_mode: "HTML",
     reply_markup: mainMenuKb(lang),
   });
 }
@@ -368,7 +368,7 @@ async function searchPartner(chatId: number, tgId: number) {
   const lang = await getUserLang(tgId);
 
   if (!limit.ok) {
-    await callAPI("sendMessage", { chat_id: chatId, text: s(lang, "limitReached"), parse_mode: "Markdown" });
+    await callAPI("sendMessage", { chat_id: chatId, text: s(lang, "limitReached"), parse_mode: "HTML" });
     return;
   }
 
@@ -431,7 +431,7 @@ async function searchPartner(chatId: number, tgId: number) {
     await callAPI("sendMessage", {
       chat_id: chatId,
       text: s(lang, "partnerFound"),
-      parse_mode: "Markdown",
+      parse_mode: "HTML",
       reply_markup: JSON.stringify({
         keyboard: [[{ text: s(lang, "btnStop") }]],
         resize_keyboard: true,
@@ -440,7 +440,7 @@ async function searchPartner(chatId: number, tgId: number) {
     await callAPI("sendMessage", {
       chat_id: partnerId,
       text: s(partnerLang, "partnerFound"),
-      parse_mode: "Markdown",
+      parse_mode: "HTML",
       reply_markup: JSON.stringify({
         keyboard: [[{ text: s(partnerLang, "btnStop") }]],
         resize_keyboard: true,
@@ -454,7 +454,7 @@ async function searchPartner(chatId: number, tgId: number) {
     await callAPI("sendMessage", {
       chat_id: chatId,
       text: (T.searching[lang] as (r: number) => string)(limit.remaining),
-      parse_mode: "Markdown",
+      parse_mode: "HTML",
       reply_markup: JSON.stringify({
         keyboard: [[{ text: s(lang, "btnStop") }]],
         resize_keyboard: true,
@@ -481,7 +481,7 @@ async function sendProfile(chatId: number, tgId: number, lang: L) {
   const langName = LANGS[lang] || lang;
   const gender = u?.gender;
 
-  let profileText = `⚙️ *${lang === "id" ? "Profil Kamu" : lang === "en" ? "Your Profile" : lang === "ar" ? "ملفك الشخصي" : lang === "jp" ? "プロフィール" : lang === "kr" ? "내 프로필" : "Votre Profil"}*\n\n`;
+  let profileText = `⚙️ <b>${lang === "id" ? "Profil Kamu" : lang === "en" ? "Your Profile" : lang === "ar" ? "ملفك الشخصي" : lang === "jp" ? "プロフィール" : lang === "kr" ? "내 프로필" : "Votre Profil"}</b>\n\n`;
   profileText += `${lang === "id" ? "Bahasa" : lang === "en" ? "Language" : lang === "ar" ? "اللغة" : lang === "jp" ? "言語" : lang === "kr" ? "언어" : "Langue"}: ${langName}\n`;
   profileText += `Status: ${vipUser ? "🌟 VIP" : "🆓 Free"}\n`;
   if (vipUser && gender) {
@@ -512,7 +512,7 @@ async function sendProfile(chatId: number, tgId: number, lang: L) {
   await callAPI("sendMessage", {
     chat_id: chatId,
     text: profileText,
-    parse_mode: "Markdown",
+    parse_mode: "HTML",
     reply_markup: JSON.stringify({ inline_keyboard: inlineKb }),
   });
 }
@@ -520,14 +520,37 @@ async function sendProfile(chatId: number, tgId: number, lang: L) {
 // ─── Send VIP info ─────────────────────────────────────────────────────────
 async function sendVipInfo(chatId: number, tgId: number, lang: L) {
   const vipUser = await isVip(tgId);
+  const vipLabels: Record<L, string> = {
+    id: "Kamu sudah VIP!", en: "You're VIP!", ar: "أنت VIP!", jp: "VIPです！", kr: "VIP입니다!", fr: "Vous êtes VIP !",
+  };
+  const upgradeLabels: Record<L, string> = {
+    id: "Upgrade VIP BigPekob!", en: "Upgrade BigPekob VIP!", ar: "رقّ إلى VIP!", jp: "VIPにアップグレード！", kr: "VIP 업그레이드!", fr: "Passez VIP !",
+  };
+  const activeDetails: Record<L, string> = {
+    id: "Aktif:\n• Pilih gender lawan chat\n• Download video\n• PAP eksklusif",
+    en: "Active:\n• Choose chat partner's gender\n• Download videos\n• Exclusive PAP",
+    ar: "نشط:\n• اختيار جنس شريك الدردشة\n• تنزيل الفيديوهات\n• PAP حصري",
+    jp: "有効:\n• 相手の性別選択\n• 動画ダウンロード\n• PAP独占",
+    kr: "활성:\n• 채팅 상대 성별 선택\n• 동영상 다운로드\n• 독점 PAP",
+    fr: "Actif :\n• Choisir le genre\n• Télécharger vidéos\n• PAP exclusif",
+  };
+  const benefitDetails: Record<L, string> = {
+    id: "Keuntungan:\n• 🔍 Pilih gender lawan chat\n• ⬇️ Download semua video\n• 📸 PAP eksklusif\n• 30 hari aktif\n\n💰 100 Telegram Stars\n\n👉 Upgrade: @bigpekob_bot → /vip",
+    en: "Benefits:\n• 🔍 Choose partner's gender\n• ⬇️ Download videos\n• 📸 Exclusive PAP\n• 30 days active\n\n💰 100 Telegram Stars\n\n👉 Upgrade: @bigpekob_bot → /vip",
+    ar: "الفوائد:\n• 🔍 اختيار الجنس\n• ⬇️ تنزيل الفيديوهات\n• 📸 PAP حصري\n• 30 يوماً\n\n💰 100 Telegram Stars\n\n👉 @bigpekob_bot → /vip",
+    jp: "特典:\n• 🔍 相手の性別選択\n• ⬇️ 動画ダウンロード\n• 📸 PAP独占\n• 30日間有効\n\n💰 100 Telegram Stars\n\n👉 @bigpekob_bot → /vip",
+    kr: "혜택:\n• 🔍 상대방 성별 선택\n• ⬇️ 동영상 다운로드\n• 📸 독점 PAP\n• 30일 활성\n\n💰 100 Telegram Stars\n\n👉 @bigpekob_bot → /vip",
+    fr: "Avantages :\n• 🔍 Choisir le genre\n• ⬇️ Télécharger vidéos\n• 📸 PAP exclusif\n• 30 jours actif\n\n💰 100 Telegram Stars\n\n👉 @bigpekob_bot → /vip",
+  };
+
   const text = vipUser
-    ? `🌟 *${lang === "id" ? "Kamu sudah VIP!" : lang === "en" ? "You're VIP!" : lang === "ar" ? "أنت VIP!" : lang === "jp" ? "VIPです！" : lang === "kr" ? "VIP입니다!" : "Vous êtes VIP !"}*\n\n✅ ${lang === "id" ? "Aktif:\n• Pilih gender lawan chat\n• Download video\n• PAP eksklusif" : lang === "en" ? "Active:\n• Choose chat partner's gender\n• Download videos\n• Exclusive PAP" : lang === "ar" ? "نشط:\n• اختيار جنس شريك الدردشة\n• تنزيل الفيديوهات\n• PAP حصري" : lang === "jp" ? "有効:\n• 相手の性別選択\n• 動画ダウンロード\n• PAP独占" : lang === "kr" ? "활성:\n• 채팅 상대 성별 선택\n• 동영상 다운로드\n• 독점 PAP" : "Actif :\n• Choisir le genre\n• Télécharger vidéos\n• PAP exclusif"}`
-    : `🌟 *${lang === "id" ? "Upgrade VIP BigPekob!" : lang === "en" ? "Upgrade BigPekob VIP!" : lang === "ar" ? "رقّ إلى VIP!" : lang === "jp" ? "VIPにアップグレード！" : lang === "kr" ? "VIP 업그레이드!" : "Passez VIP !"}*\n\n✅ ${lang === "id" ? "Keuntungan:\n• 🔍 Pilih gender lawan chat\n• ⬇️ Download semua video\n• 📸 PAP eksklusif\n• 30 hari aktif\n\n💰 100 Telegram Stars\n\n👉 Upgrade: @bigpekob_bot → /vip" : lang === "en" ? "Benefits:\n• 🔍 Choose partner's gender\n• ⬇️ Download videos\n• 📸 Exclusive PAP\n• 30 days active\n\n💰 100 Telegram Stars\n\n👉 Upgrade: @bigpekob_bot → /vip" : lang === "ar" ? "الفوائد:\n• 🔍 اختيار الجنس\n• ⬇️ تنزيل الفيديوهات\n• 📸 PAP حصري\n• 30 يوماً\n\n💰 100 Telegram Stars\n\n👉 @bigpekob_bot → /vip" : lang === "jp" ? "特典:\n• 🔍 相手の性別選択\n• ⬇️ 動画ダウンロード\n• 📸 PAP独占\n• 30日間有効\n\n💰 100 Telegram Stars\n\n👉 @bigpekob_bot → /vip" : lang === "kr" ? "혜택:\n• 🔍 상대방 성별 선택\n• ⬇️ 동영상 다운로드\n• 📸 독점 PAP\n• 30일 활성\n\n💰 100 Telegram Stars\n\n👉 @bigpekob_bot → /vip" : "Avantages :\n• 🔍 Choisir le genre\n• ⬇️ Télécharger vidéos\n• 📸 PAP exclusif\n• 30 jours actif\n\n💰 100 Telegram Stars\n\n👉 @bigpekob_bot → /vip"}`;
+    ? `🌟 <b>${vipLabels[lang]}</b>\n\n✅ ${activeDetails[lang]}`
+    : `🌟 <b>${upgradeLabels[lang]}</b>\n\n✅ ${benefitDetails[lang]}`;
 
   await callAPI("sendMessage", {
     chat_id: chatId,
     text,
-    parse_mode: "Markdown",
+    parse_mode: "HTML",
     reply_markup: JSON.stringify({
       inline_keyboard: [[{ text: "🌟 Upgrade VIP", url: BP_BOT }]],
     }),
@@ -587,7 +610,7 @@ export async function handleChatBotUpdate(body: any) {
       await callAPI("sendMessage", {
         chat_id: chatId,
         text: s(newLang, "welcome", q.from.first_name || ""),
-        parse_mode: "Markdown",
+        parse_mode: "HTML",
         reply_markup: mainMenuKb(newLang),
       });
       return;
@@ -596,25 +619,25 @@ export async function handleChatBotUpdate(body: any) {
     // Gender set (VIP only)
     if (data === "gender_male") {
       if (!(await isVip(tgId))) {
-        await callAPI("sendMessage", { chat_id: chatId, text: s(lang, "vipOnlyGender"), parse_mode: "Markdown" });
+        await callAPI("sendMessage", { chat_id: chatId, text: s(lang, "vipOnlyGender"), parse_mode: "HTML" });
         return;
       }
       await upsertCBUser(tgId, { gender: "male" });
-      await callAPI("sendMessage", { chat_id: chatId, text: s(lang, "genderSetMale"), parse_mode: "Markdown" });
+      await callAPI("sendMessage", { chat_id: chatId, text: s(lang, "genderSetMale"), parse_mode: "HTML" });
       return;
     }
     if (data === "gender_female") {
       if (!(await isVip(tgId))) {
-        await callAPI("sendMessage", { chat_id: chatId, text: s(lang, "vipOnlyGender"), parse_mode: "Markdown" });
+        await callAPI("sendMessage", { chat_id: chatId, text: s(lang, "vipOnlyGender"), parse_mode: "HTML" });
         return;
       }
       await upsertCBUser(tgId, { gender: "female" });
-      await callAPI("sendMessage", { chat_id: chatId, text: s(lang, "genderSetFemale"), parse_mode: "Markdown" });
+      await callAPI("sendMessage", { chat_id: chatId, text: s(lang, "genderSetFemale"), parse_mode: "HTML" });
       return;
     }
     if (data === "gender_reset") {
       await pool.query("UPDATE chatbot_users SET gender = NULL WHERE telegram_id = $1", [tgId]);
-      await callAPI("sendMessage", { chat_id: chatId, text: s(lang, "genderReset"), parse_mode: "Markdown" });
+      await callAPI("sendMessage", { chat_id: chatId, text: s(lang, "genderReset"), parse_mode: "HTML" });
       return;
     }
     return;
@@ -640,7 +663,7 @@ export async function handleChatBotUpdate(body: any) {
   if (pairs.has(tgId) && !isCmd && rawText !== s(lang, "btnStop")) {
     const forwarded = await forwardToPartner(tgId, msg);
     if (!forwarded) {
-      await callAPI("sendMessage", { chat_id: chatId, text: s(lang, "unsupportedMedia"), parse_mode: "Markdown" });
+      await callAPI("sendMessage", { chat_id: chatId, text: s(lang, "unsupportedMedia"), parse_mode: "HTML" });
     }
     return;
   }
@@ -654,7 +677,7 @@ export async function handleChatBotUpdate(body: any) {
       await callAPI("sendMessage", {
         chat_id: chatId,
         text: s(lang, "notInChat"),
-        parse_mode: "Markdown",
+        parse_mode: "HTML",
         reply_markup: mainMenuKb(lang),
       });
     }
@@ -668,15 +691,15 @@ export async function handleChatBotUpdate(body: any) {
       // First time: ask language
       await callAPI("sendMessage", {
         chat_id: chatId,
-        text: "🌐 *BigPekob Chat*\n\nSelect your language / Pilih bahasa kamu:",
-        parse_mode: "Markdown",
+        text: "🌐 <b>BigPekob Chat</b>\n\nSelect your language / Pilih bahasa kamu:",
+        parse_mode: "HTML",
         reply_markup: langSelectionKb(),
       });
     } else {
       await callAPI("sendMessage", {
         chat_id: chatId,
         text: s(lang, "welcome", firstName),
-        parse_mode: "Markdown",
+        parse_mode: "HTML",
         reply_markup: mainMenuKb(lang),
       });
     }
@@ -687,8 +710,8 @@ export async function handleChatBotUpdate(body: any) {
   if (rawText === "/bahasa" || rawText === s(lang, "btnChangeLang")) {
     await callAPI("sendMessage", {
       chat_id: chatId,
-      text: "🌐 *Select Language / Pilih Bahasa:*",
-      parse_mode: "Markdown",
+      text: "🌐 <b>Select Language / Pilih Bahasa:</b>",
+      parse_mode: "HTML",
       reply_markup: langSelectionKb(),
     });
     return;
@@ -697,11 +720,11 @@ export async function handleChatBotUpdate(body: any) {
   // ── /cari command or search button ─────────────────────────────────────────
   if (rawText === "/cari" || rawText === s(lang, "btnSearch") || rawText === s(lang, "btnFindAgain")) {
     if (pairs.has(tgId)) {
-      await callAPI("sendMessage", { chat_id: chatId, text: s(lang, "alreadyInChat"), parse_mode: "Markdown" });
+      await callAPI("sendMessage", { chat_id: chatId, text: s(lang, "alreadyInChat"), parse_mode: "HTML" });
       return;
     }
     if (isInAnyQueue(tgId)) {
-      await callAPI("sendMessage", { chat_id: chatId, text: s(lang, "stillSearching"), parse_mode: "Markdown" });
+      await callAPI("sendMessage", { chat_id: chatId, text: s(lang, "stillSearching"), parse_mode: "HTML" });
       return;
     }
     await searchPartner(chatId, tgId);
@@ -725,8 +748,8 @@ export async function handleChatBotUpdate(body: any) {
   if (!u?.language) {
     await callAPI("sendMessage", {
       chat_id: chatId,
-      text: "🌐 *BigPekob Chat*\n\nSelect your language / Pilih bahasa kamu:",
-      parse_mode: "Markdown",
+      text: "🌐 <b>BigPekob Chat</b>\n\nSelect your language / Pilih bahasa kamu:",
+      parse_mode: "HTML",
       reply_markup: langSelectionKb(),
     });
     return;
@@ -734,7 +757,7 @@ export async function handleChatBotUpdate(body: any) {
 
   // ── In queue, got a message ─────────────────────────────────────────────────
   if (isInAnyQueue(tgId)) {
-    await callAPI("sendMessage", { chat_id: chatId, text: s(lang, "stillSearching"), parse_mode: "Markdown" });
+    await callAPI("sendMessage", { chat_id: chatId, text: s(lang, "stillSearching"), parse_mode: "HTML" });
     return;
   }
 
@@ -742,7 +765,7 @@ export async function handleChatBotUpdate(body: any) {
   await callAPI("sendMessage", {
     chat_id: chatId,
     text: s(lang, "welcome", firstName),
-    parse_mode: "Markdown",
+    parse_mode: "HTML",
     reply_markup: mainMenuKb(lang),
   });
 }

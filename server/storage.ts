@@ -16,7 +16,9 @@ export interface IStorage {
   // Auth
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByTelegramId(telegramId: number): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  createTelegramUser(data: { telegramId: number; firstName?: string; username?: string; photoUrl?: string }): Promise<User>;
   updateUserProfile(id: number, profile: UpdateUserProfile): Promise<User>;
 
   // Videos
@@ -89,8 +91,30 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async getUserByTelegramId(telegramId: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.telegramId, telegramId));
+    return user;
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+
+  async createTelegramUser(data: { telegramId: number; firstName?: string; username?: string; photoUrl?: string }): Promise<User> {
+    const uname = data.username || `tg_${data.telegramId}`;
+    let finalUsername = uname;
+    let attempt = 0;
+    while (await this.getUserByUsername(finalUsername)) {
+      attempt++;
+      finalUsername = `${uname}_${attempt}`;
+    }
+    const [user] = await db.insert(users).values({
+      username: finalUsername,
+      password: `tg_${data.telegramId}_${Date.now()}`,
+      displayName: data.firstName || finalUsername,
+      telegramId: data.telegramId,
+    }).returning();
     return user;
   }
 

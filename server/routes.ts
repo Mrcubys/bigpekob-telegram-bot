@@ -126,6 +126,58 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.status(200).json(safeUser);
   });
 
+  app.post("/api/auth/telegram", async (req, res) => {
+    try {
+      const { initData, telegramId, firstName, username, photoUrl } = req.body;
+
+      let verifiedTgId: number | null = null;
+      let verifiedFirstName = firstName;
+      let verifiedUsername = username;
+
+      if (initData && process.env.TELEGRAM_BOT_TOKEN) {
+        const crypto = await import("crypto");
+        const params = new URLSearchParams(initData);
+        const hash = params.get("hash");
+        params.delete("hash");
+        const sorted = Array.from(params.entries()).sort(([a], [b]) => a.localeCompare(b));
+        const dataCheckString = sorted.map(([k, v]) => `${k}=${v}`).join("\n");
+        const secretKey = crypto.createHmac("sha256", "WebAppData").update(process.env.TELEGRAM_BOT_TOKEN).digest();
+        const computedHash = crypto.createHmac("sha256", secretKey).update(dataCheckString).digest("hex");
+        if (hash === computedHash) {
+          const userStr = params.get("user");
+          if (userStr) {
+            const parsed = JSON.parse(userStr);
+            verifiedTgId = Number(parsed.id);
+            verifiedFirstName = parsed.first_name || firstName;
+            verifiedUsername = parsed.username || username;
+          }
+        }
+      }
+
+      const tgId = verifiedTgId || (telegramId ? Number(telegramId) : null);
+      if (!tgId) return res.status(400).json({ message: "Missing telegramId" });
+
+      let user = await storage.getUserByTelegramId(tgId);
+      if (!user) {
+        user = await storage.createTelegramUser({ telegramId: tgId, firstName: verifiedFirstName, username: verifiedUsername, photoUrl });
+      }
+      return new Promise<void>((resolve) => {
+        req.login(user!, (err) => {
+          if (err) {
+            res.status(500).json({ message: "Auto-login failed" });
+            return resolve();
+          }
+          const { password: _, ...safeUser } = user as any;
+          res.status(200).json(safeUser);
+          resolve();
+        });
+      });
+    } catch (err) {
+      console.error("[auth/telegram] error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   app.post(api.auth.logout.path, (req, res) => {
     req.logout((err) => {
       if (err) return res.status(500).json({ message: "Logout failed" });

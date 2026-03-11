@@ -18,7 +18,8 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   displayName: text("display_name"),
   bio: text("bio"),
-  avatarData: text("avatar_data"), // base64 encoded small image
+  avatarData: text("avatar_data"),
+  telegramId: bigint("telegram_id", { mode: "number" }).unique(),
 });
 
 export const videos = pgTable("videos", {

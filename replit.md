@@ -7,7 +7,7 @@ BigPekob adalah platform berbagi video Indo/dewasa 18+ berbasis TikTok, dibangun
 Key features:
 - Full-screen vertical scroll-snap video feed ("For You" style)
 - Video upload with **disk storage** (`uploads/` dir, `fileUrl` field) — no OOM risk
-- User auth with sessions (register/login/logout)
+- User auth with sessions (register/login/logout) + **Telegram auto-login** (auto-creates user from Telegram identity via `/api/auth/telegram`)
 - Like, comment, and follow social interactions
 - User discovery/search
 - Profile editing with base64 avatar support + **profile photo upload** (click avatar)
@@ -61,7 +61,7 @@ Preferred communication style: Simple, everyday language.
 - **Database**: PostgreSQL (required via `DATABASE_URL` env var)
 - **ORM**: Drizzle ORM with `drizzle-kit` for migrations (`./migrations` directory, schema at `shared/schema.ts`)
 - **Schema tables**:
-  - `users` — id, username, password, displayName, bio, avatarData (base64 string)
+  - `users` — id, username, password, displayName, bio, avatarData (base64 string), telegramId (bigint unique, for Telegram auto-login)
   - `videos` — id, userId, title, description, fileUrl (legacy), videoData (bytea binary), mimeType, createdAt
   - `follows` — followerId, followingId (unique pair)
   - `likes` — userId, videoId (unique pair)
@@ -91,7 +91,13 @@ Preferred communication style: Simple, everyday language.
 ### Required Environment Variables
 - `DATABASE_URL` — PostgreSQL connection string (required; app throws on startup without it)
 - `SESSION_SECRET` — Secret for signing session cookies (has insecure fallback; must be set in production)
-- `TELEGRAM_BOT_TOKEN` — Bot token from @BotFather (required for Telegram Mini App integration)
+- `TELEGRAM_BOT_TOKEN` — Bot token for @bigpekob_bot (Mini App, VIP, PAP, channel posting)
+- `TELEGRAM_CHAT_BOT_TOKEN` — Bot token for @bigpekob_chat_bot (anonymous chat)
+
+### Telegram Bot Notes
+- Both bots use **HTML parse mode** (`parse_mode: "HTML"`) for all messages — Markdown v1 breaks on bot usernames containing underscores (e.g. `@bigpekob_bot`)
+- Mini App auto-login: on mount, if `window.Telegram.WebApp.initDataUnsafe.user` exists, POST to `/api/auth/telegram` to auto-create/login the user
+- Users table has `telegram_id` column for linking Telegram accounts to app users
 
 ### Key Third-Party Libraries
 
