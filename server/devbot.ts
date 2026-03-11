@@ -9,6 +9,8 @@ const WEBHOOK_URL = `https://${DOMAIN}/api/devbot/webhook`;
 const ALLOWED_USERNAMES = new Set(["rafnoxxx", "bahlillahadila"]);
 
 const awaitingAI = new Map<number, string[]>();
+const awaitingVipUsername = new Set<number>();
+const awaitingVipDays = new Map<number, number>();
 
 function escHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -53,8 +55,8 @@ async function sendDevMenu(chatId: number) {
       inline_keyboard: [
         [{ text: "📊 Stats", callback_data: "dev_stats" }, { text: "🔧 Maintenance", callback_data: "dev_maintenance" }],
         [{ text: "🤖 Bot Status", callback_data: "dev_botstatus" }, { text: "📢 Broadcast", callback_data: "dev_broadcast" }],
-        [{ text: "🧠 Chat AI", callback_data: "dev_ai" }, { text: "🔄 Restart Bots", callback_data: "dev_restart" }],
-        [{ text: "📋 Recent Logs", callback_data: "dev_logs" }],
+        [{ text: "👑 Kelola VIP", callback_data: "dev_vip" }, { text: "🔄 Restart Bots", callback_data: "dev_restart" }],
+        [{ text: "🧠 Chat AI", callback_data: "dev_ai" }, { text: "📋 Recent Logs", callback_data: "dev_logs" }],
       ],
     }),
   });
@@ -164,6 +166,37 @@ async function restartBots(chatId: number) {
 const awaitingMaintMsg = new Set<number>();
 const awaitingBroadcast = new Set<number>();
 
+async function showVipMenu(chatId: number) {
+  const vipList = await storage.getActiveVipUsers();
+  let vipText = "";
+  if (vipList.length === 0) {
+    vipText = "\n📭 Belum ada user VIP aktif.";
+  } else {
+    vipText = "\n\n📋 <b>VIP Aktif:</b>\n";
+    for (const v of vipList) {
+      const user = await storage.getUserByTelegramId(v.telegramId);
+      const name = user ? `@${escHtml(user.username)}` : `TG:${v.telegramId}`;
+      const exp = v.expiresAt ? v.expiresAt.toLocaleDateString("id-ID") : "Permanent";
+      vipText += `• ${name} — exp: ${exp}\n`;
+    }
+  }
+
+  await callAPI("sendMessage", {
+    chat_id: chatId,
+    text:
+      `👑 <b>Kelola VIP</b>\n` +
+      `${vipText}`,
+    parse_mode: "HTML",
+    reply_markup: JSON.stringify({
+      inline_keyboard: [
+        [{ text: "➕ Tambah VIP", callback_data: "dev_vip_add" }],
+        [{ text: "❌ Hapus VIP", callback_data: "dev_vip_remove" }],
+        [{ text: "🔙 Menu", callback_data: "dev_menu" }],
+      ],
+    }),
+  });
+}
+
 function isAllowed(username?: string): boolean {
   if (!username) return false;
   return ALLOWED_USERNAMES.has(username.toLowerCase());
@@ -209,6 +242,90 @@ export async function handleDevBotUpdate(update: any) {
 
     if (text === "/restart") {
       await restartBots(chatId);
+      return;
+    }
+
+    if (awaitingVipUsername.has(tgId)) {
+      awaitingVipUsername.delete(tgId);
+      const input = text.replace("@", "").trim();
+      
+      let targetUser: any = null;
+      const asTgId = parseInt(input);
+      if (!isNaN(asTgId) && asTgId > 0) {
+        targetUser = await storage.getUserByTelegramId(asTgId);
+        if (!targetUser) {
+          await callAPI("sendMessage", {
+            chat_id: chatId,
+            text: `❌ User dengan Telegram ID <code>${asTgId}</code> tidak ditemukan di database.`,
+            parse_mode: "HTML",
+            reply_markup: JSON.stringify({ inline_keyboard: [[{ text: "🔙 Kelola VIP", callback_data: "dev_vip" }]] }),
+          });
+          return;
+        }
+      } else {
+        const users = await storage.searchUsers(input);
+        targetUser = users.find((u: any) => u.username?.toLowerCase() === input.toLowerCase());
+        if (!targetUser) {
+          await callAPI("sendMessage", {
+            chat_id: chatId,
+            text: `❌ User <code>${escHtml(input)}</code> tidak ditemukan.`,
+            parse_mode: "HTML",
+            reply_markup: JSON.stringify({ inline_keyboard: [[{ text: "🔙 Kelola VIP", callback_data: "dev_vip" }]] }),
+          });
+          return;
+        }
+      }
+
+      if (!targetUser.telegramId) {
+        await callAPI("sendMessage", {
+          chat_id: chatId,
+          text: `❌ User @${escHtml(targetUser.username)} belum terhubung dengan Telegram. Tidak bisa set VIP.`,
+          parse_mode: "HTML",
+          reply_markup: JSON.stringify({ inline_keyboard: [[{ text: "🔙 Kelola VIP", callback_data: "dev_vip" }]] }),
+        });
+        return;
+      }
+
+      awaitingVipDays.set(tgId, targetUser.telegramId);
+      await callAPI("sendMessage", {
+        chat_id: chatId,
+        text:
+          `👤 User: <b>@${escHtml(targetUser.username)}</b>\n` +
+          `📱 Telegram ID: <code>${targetUser.telegramId}</code>\n\n` +
+          `Berapa hari VIP? (ketik angka, misal: 30)`,
+        parse_mode: "HTML",
+      });
+      return;
+    }
+
+    if (awaitingVipDays.has(tgId)) {
+      const targetTelegramId = awaitingVipDays.get(tgId)!;
+      awaitingVipDays.delete(tgId);
+      const days = parseInt(text);
+      if (isNaN(days) || days < 1) {
+        await callAPI("sendMessage", {
+          chat_id: chatId,
+          text: "❌ Angka tidak valid. Masukkan jumlah hari (misal: 30).",
+          parse_mode: "HTML",
+          reply_markup: JSON.stringify({ inline_keyboard: [[{ text: "🔙 Kelola VIP", callback_data: "dev_vip" }]] }),
+        });
+        return;
+      }
+      const expires = new Date();
+      expires.setDate(expires.getDate() + days);
+      await storage.setVipUser(targetTelegramId, expires);
+      const user = await storage.getUserByTelegramId(targetTelegramId);
+      const name = user ? `@${escHtml(user.username)}` : `TG:${targetTelegramId}`;
+      await callAPI("sendMessage", {
+        chat_id: chatId,
+        text:
+          `✅ <b>VIP Diaktifkan!</b>\n\n` +
+          `👤 User: ${name}\n` +
+          `⏱️ Durasi: ${days} hari\n` +
+          `📅 Expired: ${expires.toLocaleDateString("id-ID")}`,
+        parse_mode: "HTML",
+        reply_markup: JSON.stringify({ inline_keyboard: [[{ text: "🔙 Kelola VIP", callback_data: "dev_vip" }], [{ text: "🔙 Menu", callback_data: "dev_menu" }]] }),
+      });
       return;
     }
 
@@ -415,6 +532,69 @@ Answer in the same language as the user. Be concise and helpful.`;
           inline_keyboard: [[{ text: "🔙 Menu", callback_data: "dev_menu" }]],
         }),
       });
+      return;
+    }
+
+    if (data === "dev_vip") {
+      await showVipMenu(chatId);
+      return;
+    }
+
+    if (data === "dev_vip_add") {
+      awaitingVipUsername.add(tgId);
+      await callAPI("sendMessage", {
+        chat_id: chatId,
+        text:
+          "➕ <b>Tambah VIP</b>\n\n" +
+          "Ketik username atau Telegram ID user:\n\n" +
+          "Contoh:\n" +
+          "• <code>rafnoxxx</code>\n" +
+          "• <code>5650983718</code>",
+        parse_mode: "HTML",
+      });
+      return;
+    }
+
+    if (data === "dev_vip_remove") {
+      const vipList = await storage.getActiveVipUsers();
+      if (vipList.length === 0) {
+        await callAPI("sendMessage", {
+          chat_id: chatId,
+          text: "📭 Tidak ada VIP aktif.",
+          parse_mode: "HTML",
+          reply_markup: JSON.stringify({ inline_keyboard: [[{ text: "🔙 Kelola VIP", callback_data: "dev_vip" }]] }),
+        });
+        return;
+      }
+      const buttons = [];
+      for (const v of vipList) {
+        const user = await storage.getUserByTelegramId(v.telegramId);
+        const name = user ? `@${user.username}` : `TG:${v.telegramId}`;
+        buttons.push([{ text: `❌ ${name}`, callback_data: `dev_vip_del_${v.telegramId}` }]);
+      }
+      buttons.push([{ text: "🔙 Kelola VIP", callback_data: "dev_vip" }]);
+      await callAPI("sendMessage", {
+        chat_id: chatId,
+        text: "❌ <b>Hapus VIP</b>\n\nPilih user yang ingin dihapus VIP-nya:",
+        parse_mode: "HTML",
+        reply_markup: JSON.stringify({ inline_keyboard: buttons }),
+      });
+      return;
+    }
+
+    if (data.startsWith("dev_vip_del_")) {
+      const targetTgId = parseInt(data.replace("dev_vip_del_", ""));
+      if (!isNaN(targetTgId)) {
+        const user = await storage.getUserByTelegramId(targetTgId);
+        const name = user ? `@${escHtml(user.username)}` : `TG:${targetTgId}`;
+        await storage.removeVipUser(targetTgId);
+        await callAPI("sendMessage", {
+          chat_id: chatId,
+          text: `✅ VIP untuk ${name} telah dihapus.`,
+          parse_mode: "HTML",
+          reply_markup: JSON.stringify({ inline_keyboard: [[{ text: "🔙 Kelola VIP", callback_data: "dev_vip" }], [{ text: "🔙 Menu", callback_data: "dev_menu" }]] }),
+        });
+      }
       return;
     }
 

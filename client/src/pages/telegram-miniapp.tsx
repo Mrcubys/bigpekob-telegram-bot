@@ -408,30 +408,56 @@ function TGVideoCard({
 
         {/* Download (VIP only) */}
         <button
-          onClick={(e) => {
+          onClick={async (e) => {
             e.stopPropagation();
             if (!isVip) {
-              alert("🌟 Fitur ini khusus VIP!\n\nUpgrade VIP lewat bot Telegram untuk bisa download video.");
+              window.open("https://t.me/bigpekob_bot", "_blank");
               return;
             }
             if (!telegramId) {
               alert("Login via Telegram untuk download.");
               return;
             }
-            const a = document.createElement("a");
-            a.href = `/api/videos/${video.id}/download?telegram_id=${telegramId}`;
-            a.download = video.title || "video";
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            setIsDownloading(true);
+            try {
+              const downloadUrl = `/api/videos/${video.id}/download?telegram_id=${telegramId}`;
+              const tgWebApp = window.Telegram?.WebApp;
+              if (tgWebApp?.openLink) {
+                const fullUrl = `${window.location.origin}${downloadUrl}`;
+                tgWebApp.openLink(fullUrl);
+              } else {
+                const res = await fetch(downloadUrl, { credentials: "include" });
+                if (!res.ok) throw new Error("Download gagal");
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `${(video.title || "video").replace(/[^a-z0-9\s]/gi, "_")}.mp4`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+              }
+            } catch {
+              alert("Gagal download video. Coba lagi.");
+            } finally {
+              setIsDownloading(false);
+            }
           }}
           className="flex flex-col items-center gap-1"
           data-testid={`tg-download-btn-${video.id}`}
+          disabled={isDownloading}
         >
           <div className={clsx("w-11 h-11 rounded-full flex items-center justify-center", isVip ? "bg-yellow-500/30" : "bg-black/40")}>
-            {isVip ? <Download className="w-5 h-5 text-yellow-400" /> : <Star className="w-5 h-5 text-zinc-400" />}
+            {isDownloading ? (
+              <Loader2 className="w-5 h-5 text-yellow-400 animate-spin" />
+            ) : isVip ? (
+              <Download className="w-5 h-5 text-yellow-400" />
+            ) : (
+              <Star className="w-5 h-5 text-zinc-400" />
+            )}
           </div>
-          <span className="text-white/60 text-[9px]">{isVip ? "Unduh" : "VIP"}</span>
+          <span className="text-white/60 text-[9px]">{isDownloading ? "..." : isVip ? "Unduh" : "VIP"}</span>
         </button>
       </div>
 

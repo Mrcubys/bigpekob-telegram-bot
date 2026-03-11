@@ -52,6 +52,8 @@ export interface IStorage {
   // VIP
   isVipUser(telegramId: number): Promise<boolean>;
   setVipUser(telegramId: number, expiresAt?: Date): Promise<VipUser>;
+  getActiveVipUsers(): Promise<VipUser[]>;
+  removeVipUser(telegramId: number): Promise<void>;
 
   // PAP Donations
   addPapDonation(data: { telegramId: number; gender: string; fileId: string; mediaType: string; caption?: string }): Promise<PapDonation>;
@@ -436,6 +438,16 @@ export class DatabaseStorage implements IStorage {
       .values({ telegramId, expiresAt })
       .returning();
     return row;
+  }
+
+  async getActiveVipUsers(): Promise<VipUser[]> {
+    const rows = await db.select().from(vipUsers)
+      .where(gt(vipUsers.expiresAt, new Date()));
+    return rows;
+  }
+
+  async removeVipUser(telegramId: number): Promise<void> {
+    await db.delete(vipUsers).where(eq(vipUsers.telegramId, telegramId));
   }
 
   // =========== PAP ===========
