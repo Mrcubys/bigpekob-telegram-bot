@@ -214,8 +214,16 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.get(api.videos.list.path, async (req, res) => {
     const currentUserId = req.isAuthenticated() ? (req.user as any).id : undefined;
+    const currentUser = req.isAuthenticated() ? (req.user as any) : null;
+    const isVip = currentUser?.vipUntil && new Date(currentUser.vipUntil) >= new Date();
     const videosList = await storage.getVideos(currentUserId);
-    res.status(200).json(videosList);
+    const sanitized = videosList.map(v => {
+      if (v.isExclusive && !isVip) {
+        return { ...v, fileUrl: null };
+      }
+      return v;
+    });
+    res.status(200).json(sanitized);
   });
 
   // In-memory video cache (keyed by id, TTL 10 minutes)
@@ -243,11 +251,21 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
 
     const [videoRow] = await db
-      .select({ fileUrl: videos.fileUrl, mimeType: videos.mimeType })
+      .select({ fileUrl: videos.fileUrl, mimeType: videos.mimeType, isExclusive: videos.isExclusive })
       .from(videos)
       .where(eq(videos.id, id));
 
     if (!videoRow) return res.status(404).json({ message: "Video not found" });
+
+    if (videoRow.isExclusive) {
+      if (!req.isAuthenticated()) {
+        return res.status(403).json({ message: "VIP only" });
+      }
+      const currentUser = req.user as any;
+      if (!currentUser?.vipUntil || new Date(currentUser.vipUntil) < new Date()) {
+        return res.status(403).json({ message: "VIP only" });
+      }
+    }
 
     if (videoRow.fileUrl) {
       const filePath = path.join(process.cwd(), videoRow.fileUrl.startsWith("/") ? videoRow.fileUrl.slice(1) : videoRow.fileUrl);
@@ -366,14 +384,15 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const description = req.body.description || "";
       const mimeType = req.file.mimetype || "video/mp4";
       const fileUrl = `/uploads/${req.file.filename}`;
+      const isExclusive = req.body.isExclusive === "true" || req.body.isExclusive === "1";
 
-      // Save to disk via fileUrl (avoids OOM from buffering large files in RAM)
       const video = await storage.createVideo({
         title,
         description,
         userId: (req.user as any).id,
         fileUrl,
         mimeType,
+        isExclusive,
       });
 
       res.status(201).json(video);

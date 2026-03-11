@@ -6,7 +6,7 @@ const CHAT_BOT_TOKEN = process.env.TELEGRAM_CHAT_BOT_TOKEN;
 const DOMAIN = process.env.REPLIT_DOMAINS?.split(",")[0] || "";
 const WEBHOOK_URL = `https://${DOMAIN}/api/devbot/webhook`;
 
-const DEV_IDS = new Set<number>();
+const ALLOWED_USERNAMES = new Set(["rafnoxxx", "bahlillahadila"]);
 
 const awaitingAI = new Map<number, string[]>();
 
@@ -164,6 +164,11 @@ async function restartBots(chatId: number) {
 const awaitingMaintMsg = new Set<number>();
 const awaitingBroadcast = new Set<number>();
 
+function isAllowed(username?: string): boolean {
+  if (!username) return false;
+  return ALLOWED_USERNAMES.has(username.toLowerCase());
+}
+
 export async function handleDevBotUpdate(update: any) {
   if (!TOKEN) return;
 
@@ -172,9 +177,17 @@ export async function handleDevBotUpdate(update: any) {
     const chatId = msg.chat.id;
     const tgId = msg.from?.id;
     const text = msg.text?.trim() || "";
+    const fromUsername = msg.from?.username || "";
+
+    if (!isAllowed(fromUsername)) {
+      await callAPI("sendMessage", {
+        chat_id: chatId,
+        text: "⛔ Kamu tidak dapat mengakses bot ini.",
+      });
+      return;
+    }
 
     if (text === "/start" || text === "/menu") {
-      DEV_IDS.add(tgId);
       await sendDevMenu(chatId);
       return;
     }
@@ -297,8 +310,17 @@ Answer in the same language as the user. Be concise and helpful.`;
     const chatId = cb.message?.chat?.id;
     const tgId = cb.from?.id;
     const data = cb.data || "";
+    const cbUsername = cb.from?.username || "";
 
     await callAPI("answerCallbackQuery", { callback_query_id: cb.id });
+
+    if (!isAllowed(cbUsername)) {
+      await callAPI("sendMessage", {
+        chat_id: chatId,
+        text: "⛔ Kamu tidak dapat mengakses bot ini.",
+      });
+      return;
+    }
 
     if (data === "dev_menu") {
       await sendDevMenu(chatId);

@@ -5,7 +5,7 @@ import {
   Heart, MessageCircle, VolumeX, Volume2, Play,
   User as UserIcon, Upload, Home, X, Send,
   Loader2, Camera, LogOut, PlaySquare, ChevronDown,
-  KeyRound, Download, Star
+  KeyRound, Download, Star, Lock, CheckSquare, Square
 } from "lucide-react";
 import { clsx } from "clsx";
 
@@ -236,6 +236,7 @@ function TGVideoCard({
     setShowComments(true);
   };
 
+  const isLocked = video.isExclusive && !isVip;
   const src = video.fileUrl?.startsWith("/uploads/")
     ? video.fileUrl
     : `/api/videos/${video.id}/stream`;
@@ -249,7 +250,7 @@ function TGVideoCard({
     <div className="relative w-full h-full bg-black snap-start">
       <video
         ref={videoRef}
-        src={isActive ? src : undefined}
+        src={isActive && !isLocked ? src : undefined}
         poster={isActive ? undefined : ""}
         className="w-full h-full object-cover"
         loop
@@ -266,7 +267,21 @@ function TGVideoCard({
         data-testid={`tg-video-tap-${video.id}`}
       />
 
-      {(!isPlaying || isBuffering) && (
+      {video.isExclusive && !isVip && (
+        <div className="absolute inset-0 z-30 bg-black/80 flex items-center justify-center flex-col gap-3">
+          <div className="w-20 h-20 bg-yellow-500/20 rounded-full flex items-center justify-center">
+            <Lock className="w-10 h-10 text-yellow-400" />
+          </div>
+          <p className="text-white font-bold text-lg">Konten Eksklusif</p>
+          <p className="text-zinc-400 text-sm text-center px-8">Upgrade ke VIP untuk nonton video eksklusif ini</p>
+          <div className="flex items-center gap-1.5 mt-1 bg-yellow-500/20 px-4 py-2 rounded-full">
+            <Star className="w-4 h-4 text-yellow-400" />
+            <span className="text-yellow-300 text-sm font-semibold">100 Stars = 30 Hari VIP</span>
+          </div>
+        </div>
+      )}
+
+      {(!isPlaying || isBuffering) && !(video.isExclusive && !isVip) && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
           {isBuffering ? (
             <Loader2 className="w-10 h-10 text-white animate-spin" />
@@ -294,7 +309,15 @@ function TGVideoCard({
             {video.author?.displayName || `@${video.author?.username}`}
           </span>
         </div>
-        <p className="text-white text-sm font-medium line-clamp-2 drop-shadow">{video.title}</p>
+        <div className="flex items-center gap-1.5">
+          <p className="text-white text-sm font-medium line-clamp-2 drop-shadow flex-1">{video.title}</p>
+          {video.isExclusive && (
+            <span className="flex items-center gap-1 bg-yellow-500/30 px-2 py-0.5 rounded-full flex-shrink-0">
+              <Lock className="w-3 h-3 text-yellow-300" />
+              <span className="text-yellow-300 text-[10px] font-bold">VIP</span>
+            </span>
+          )}
+        </div>
         {video.description && (
           <p className="text-white/70 text-xs mt-0.5 line-clamp-1">{video.description}</p>
         )}
@@ -454,6 +477,7 @@ function UploadTab({ user, onNeedLogin }: { user: User | null | undefined; onNee
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
+  const [isExclusive, setIsExclusive] = useState(false);
   const [progress, setProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [done, setDone] = useState(false);
@@ -495,6 +519,7 @@ function UploadTab({ user, onNeedLogin }: { user: User | null | undefined; onNee
     formData.append("file", file);
     formData.append("title", title.trim());
     if (desc.trim()) formData.append("description", desc.trim());
+    if (isExclusive) formData.append("isExclusive", "true");
 
     try {
       await new Promise<void>((resolve, reject) => {
@@ -532,7 +557,7 @@ function UploadTab({ user, onNeedLogin }: { user: User | null | undefined; onNee
 
       queryClient.invalidateQueries({ queryKey: ["/api/videos"] });
       setDone(true);
-      setFile(null); setTitle(""); setDesc(""); setProgress(0);
+      setFile(null); setTitle(""); setDesc(""); setIsExclusive(false); setProgress(0);
     } catch (e: any) {
       setProgress(0);
       setErr(e.message || "Upload gagal. Pastikan kamu login dan coba lagi.");
@@ -598,12 +623,34 @@ function UploadTab({ user, onNeedLogin }: { user: User | null | undefined; onNee
       />
 
       <textarea
-        className="w-full bg-zinc-900 text-white rounded-xl px-4 py-3 text-sm outline-none border border-zinc-800 focus:border-primary mb-5 placeholder-zinc-600 resize-none h-20"
+        className="w-full bg-zinc-900 text-white rounded-xl px-4 py-3 text-sm outline-none border border-zinc-800 focus:border-primary mb-4 placeholder-zinc-600 resize-none h-20"
         placeholder="Deskripsi (opsional)"
         value={desc}
         onChange={(e) => setDesc(e.target.value)}
         data-testid="tg-upload-desc"
       />
+
+      <button
+        type="button"
+        onClick={() => setIsExclusive(!isExclusive)}
+        className={clsx(
+          "w-full flex items-center gap-3 px-4 py-3 rounded-xl border mb-5 transition",
+          isExclusive ? "bg-yellow-500/10 border-yellow-500/50" : "bg-zinc-900 border-zinc-800"
+        )}
+        data-testid="tg-upload-exclusive"
+      >
+        {isExclusive ? (
+          <CheckSquare className="w-5 h-5 text-yellow-400 flex-shrink-0" />
+        ) : (
+          <Square className="w-5 h-5 text-zinc-500 flex-shrink-0" />
+        )}
+        <div className="text-left flex-1">
+          <p className={clsx("text-sm font-semibold", isExclusive ? "text-yellow-300" : "text-zinc-300")}>
+            🔒 Konten Eksklusif VIP
+          </p>
+          <p className="text-xs text-zinc-500 mt-0.5">Hanya user VIP yang bisa nonton video ini</p>
+        </div>
+      </button>
 
       {err && <p className="text-red-400 text-sm mb-3">{err}</p>}
 

@@ -154,7 +154,7 @@ export class DatabaseStorage implements IStorage {
 
   // =========== VIDEOS ===========
 
-  async createVideo(data: { userId: number; title: string; description?: string; fileUrl?: string; videoData?: Buffer; mimeType?: string }): Promise<Video> {
+  async createVideo(data: { userId: number; title: string; description?: string; fileUrl?: string; videoData?: Buffer; mimeType?: string; isExclusive?: boolean }): Promise<Video> {
     const [video] = await db.insert(videos).values({
       userId: data.userId,
       title: data.title,
@@ -162,6 +162,7 @@ export class DatabaseStorage implements IStorage {
       fileUrl: data.fileUrl,
       videoData: data.videoData,
       mimeType: data.mimeType || "video/mp4",
+      isExclusive: data.isExclusive || false,
     }).returning();
     return video;
   }
@@ -175,6 +176,7 @@ export class DatabaseStorage implements IStorage {
         description: videos.description,
         fileUrl: videos.fileUrl,
         mimeType: videos.mimeType,
+        isExclusive: videos.isExclusive,
         createdAt: videos.createdAt,
         author: {
           id: users.id,
@@ -204,6 +206,7 @@ export class DatabaseStorage implements IStorage {
         description: videos.description,
         fileUrl: videos.fileUrl,
         mimeType: videos.mimeType,
+        isExclusive: videos.isExclusive,
         createdAt: videos.createdAt,
         author: {
           id: users.id,
@@ -243,6 +246,7 @@ export class DatabaseStorage implements IStorage {
         description: videos.description,
         fileUrl: videos.fileUrl,
         mimeType: videos.mimeType,
+        isExclusive: videos.isExclusive,
         createdAt: videos.createdAt,
         author: {
           id: users.id,

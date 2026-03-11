@@ -30,6 +30,7 @@ export const videos = pgTable("videos", {
   fileUrl: text("file_url"), // legacy file-based URL (optional)
   videoData: bytea("video_data"), // binary video data stored in DB
   mimeType: text("mime_type").default("video/mp4"),
+  isExclusive: boolean("is_exclusive").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -182,6 +183,7 @@ export type VideoResponse = Omit<Video, "videoData"> & {
   likeCount: number;
   commentCount: number;
   isLiked?: boolean;
+  isExclusive?: boolean;
 };
 
 export type CommentResponse = Comment & {
