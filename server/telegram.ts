@@ -23,25 +23,36 @@ export async function setupTelegramWebhook() {
 
   try {
     const b = getBot();
+
     await b.setWebHook(WEBHOOK_URL);
 
-    // Set bot commands
     await b.setMyCommands([
       { command: "start", description: "Buka BigPekob Mini App" },
-      { command: "trending", description: "Lihat video trending" },
+      { command: "trending", description: "Lihat video yang lagi viral" },
       { command: "help", description: "Bantuan" },
     ]);
 
-    // Set Mini App button in menu
-    await b.setChatMenuButton({
-      menu_button: {
-        type: "web_app",
-        text: "BigPekob",
-        web_app: { url: MINI_APP_URL },
-      } as any,
-    });
+    await b.setMyDescription(
+      "🔞 BigPekob — Konten Indo terbaru dan yang lagi viral cuman ada disini.\n\n" +
+      "⚠️ Konten dewasa 18+. Dilarang keras untuk pengguna di bawah umur."
+    );
+
+    await b.setMyShortDescription(
+      "🔞 Konten Indo viral 18+ — cuman ada di BigPekob."
+    );
+
+    try {
+      await (b as any).setChatMenuButton({
+        menu_button: {
+          type: "web_app",
+          text: "🎬 Buka BigPekob",
+          web_app: { url: MINI_APP_URL },
+        },
+      });
+    } catch {}
 
     console.log(`[telegram] Webhook set to ${WEBHOOK_URL}`);
+    console.log(`[telegram] Mini App URL: ${MINI_APP_URL}`);
   } catch (err) {
     console.error("[telegram] Failed to setup webhook:", err);
   }
@@ -60,14 +71,16 @@ export async function handleTelegramUpdate(body: any) {
   const text = msg.text || "";
 
   if (text.startsWith("/start")) {
-    await b.sendMessage(chatId,
-      "🎬 *Selamat datang di BigPekob!*\n\nNonton dan share video seru langsung dari Telegram.\n\nKlik tombol di bawah untuk buka Mini App:",
+    await b.sendMessage(
+      chatId,
+      "🔞 *BigPekob* — Nonton indo terbaru dan yang lagi viral cuman ada disini! 🔥\n\n" +
+      "Klik tombol di bawah untuk langsung nonton:",
       {
         parse_mode: "Markdown",
         reply_markup: {
           inline_keyboard: [[
             {
-              text: "🚀 Buka BigPekob",
+              text: "🎬 Buka BigPekob",
               web_app: { url: MINI_APP_URL },
             }
           ]]
@@ -87,11 +100,11 @@ export async function handleTelegramUpdate(body: any) {
         return;
       }
 
-      let reply = "🔥 *Video Trending BigPekob:*\n\n";
+      let reply = "🔥 *Yang Lagi Viral di BigPekob:*\n\n";
       top.forEach((v, i) => {
         reply += `${i + 1}. *${v.title || "Untitled"}*\n`;
-        reply += `   👤 ${v.author?.displayName || v.author?.username || "Unknown"}\n`;
-        reply += `   ❤️ ${v.likeCount || 0} likes\n\n`;
+        reply += `   👤 ${(v as any).author?.displayName || (v as any).author?.username || "Unknown"}\n`;
+        reply += `   ❤️ ${(v as any).likeCount || 0} likes\n\n`;
       });
 
       await b.sendMessage(chatId, reply, {
@@ -112,25 +125,26 @@ export async function handleTelegramUpdate(body: any) {
   }
 
   if (text.startsWith("/help")) {
-    await b.sendMessage(chatId,
+    await b.sendMessage(
+      chatId,
       "📖 *Perintah BigPekob Bot:*\n\n" +
-      "/start - Buka BigPekob Mini App\n" +
-      "/trending - Lihat 5 video terpopuler\n" +
-      "/help - Tampilkan bantuan ini\n\n" +
-      "Atau klik tombol *BigPekob* di menu chat untuk langsung membuka aplikasi!",
+      "/start — Buka BigPekob Mini App\n" +
+      "/trending — Lihat video yang lagi viral\n" +
+      "/help — Tampilkan bantuan ini\n\n" +
+      "⚠️ _Konten dewasa 18+. Dilarang untuk pengguna di bawah umur._",
       { parse_mode: "Markdown" }
     );
     return;
   }
 
-  // Default response
-  await b.sendMessage(chatId,
-    "Hei! Ketik /start untuk membuka BigPekob Mini App 🎬",
+  await b.sendMessage(
+    chatId,
+    "🔞 Nonton indo terbaru dan yang lagi viral cuman ada disini! 🔥",
     {
       reply_markup: {
         inline_keyboard: [[
           {
-            text: "🚀 Buka BigPekob",
+            text: "🎬 Buka BigPekob",
             web_app: { url: MINI_APP_URL },
           }
         ]]
