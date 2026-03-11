@@ -616,13 +616,44 @@ function ProfileTab({ user, onNeedLogin, onLogout }: { user: User | null | undef
       {/* Header */}
       <div className="bg-zinc-900 px-5 pt-8 pb-6">
         <div className="flex items-start gap-4 mb-4">
-          <div className="w-16 h-16 rounded-full bg-zinc-800 flex items-center justify-center border-2 border-zinc-700 flex-shrink-0 overflow-hidden">
-            {user.avatarData ? (
-              <img src={user.avatarData} alt="" className="w-full h-full object-cover" />
-            ) : (
-              <UserIcon className="w-8 h-8 text-zinc-500" />
-            )}
-          </div>
+          {/* Avatar — klik untuk ganti foto */}
+          <label className="relative cursor-pointer flex-shrink-0 group" data-testid="tg-avatar-label">
+            <div className="w-16 h-16 rounded-full bg-zinc-800 flex items-center justify-center border-2 border-zinc-700 overflow-hidden">
+              {user.avatarData ? (
+                <img src={user.avatarData} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <UserIcon className="w-8 h-8 text-zinc-500" />
+              )}
+            </div>
+            <div className="absolute bottom-0 right-0 w-5 h-5 bg-primary rounded-full flex items-center justify-center border border-zinc-900">
+              <Camera className="w-3 h-3 text-white" />
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              data-testid="tg-avatar-input"
+              onChange={async (e) => {
+                const imgFile = e.target.files?.[0];
+                if (!imgFile) return;
+                const reader = new FileReader();
+                reader.onload = async () => {
+                  const base64 = reader.result as string;
+                  try {
+                    await fetch("/api/auth/profile", {
+                      method: "PUT",
+                      headers: { "Content-Type": "application/json" },
+                      credentials: "include",
+                      body: JSON.stringify({ avatarData: base64 }),
+                    });
+                    queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+                  } catch {}
+                };
+                reader.readAsDataURL(imgFile);
+                e.target.value = "";
+              }}
+            />
+          </label>
           <div className="flex-1 min-w-0">
             <p className="text-white font-bold text-lg leading-tight">{user.displayName || `@${user.username}`}</p>
             <p className="text-zinc-400 text-sm">@{user.username}</p>

@@ -6,17 +6,19 @@ BigPekob adalah platform berbagi video Indo/dewasa 18+ berbasis TikTok, dibangun
 
 Key features:
 - Full-screen vertical scroll-snap video feed ("For You" style)
-- Video upload with binary storage in PostgreSQL (bytea column)
+- Video upload with **disk storage** (`uploads/` dir, `fileUrl` field) — no OOM risk
 - User auth with sessions (register/login/logout)
 - Like, comment, and follow social interactions
 - User discovery/search
-- Profile editing with base64 avatar support
+- Profile editing with base64 avatar support + **profile photo upload** (click avatar)
 - **Telegram Mini App** at `/telegram` with Feed/Upload/Profile tabs
-- **VIP system** via Telegram Stars (50 Stars = 30 days VIP, enables video download)
+- **VIP system** via Telegram Stars (100 Stars = 30 days VIP, enables video download)
 - **Video download** for VIP users (gated by `telegram_id` query param)
 - **Donasi PAP** conversation flow in bot (gender-based, privacy protected)
-- **Channel auto-posting** every hour (admin sets channel via `/setchannel`)
+- **Channel auto-posting** every hour (6 rotating templates with video titles list)
+- **`/chatkechannel`** command: member kirim pesan anonim ke channel BigPekob
 - **Optimized video streaming** with in-memory cache (10 min TTL) + ETag support
+- **@bigpekob_chat_bot** (anonymous chat): gender selection, /cari pairing, /stop, VIP gender filter, daily 100-search limit
 
 ## User Preferences
 

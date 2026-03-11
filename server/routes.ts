@@ -14,20 +14,28 @@ import session from "express-session";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import { setupTelegramWebhook, handleTelegramUpdate } from "./telegram";
+import { handleChatBotUpdate, setupChatBot } from "./chatbot";
 
-// Setup multer: use memory storage so we can save to DB as binary
-const uploader = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 2 * 1024 * 1024 * 1024, // 2GB limit
-  },
-});
-
-// Legacy file upload directory (for serving old file-based videos)
+// Upload directory — must be defined BEFORE multer
 const uploadDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
+
+// Setup multer: disk storage to avoid OOM on large video files
+const uploader = multer({
+  storage: multer.diskStorage({
+    destination: uploadDir,
+    filename: (_req, file, cb) => {
+      const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+      const ext = path.extname(file.originalname) || ".mp4";
+      cb(null, `${uniqueSuffix}${ext}`);
+    },
+  }),
+  limits: {
+    fileSize: 2 * 1024 * 1024 * 1024, // 2GB limit
+  },
+});
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
   // Serve legacy file-based uploads
@@ -283,13 +291,14 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const title = req.body.title || "Untitled";
       const description = req.body.description || "";
       const mimeType = req.file.mimetype || "video/mp4";
+      const fileUrl = `/uploads/${req.file.filename}`;
 
-      // Store binary in DB for persistence across environments
+      // Save to disk via fileUrl (avoids OOM from buffering large files in RAM)
       const video = await storage.createVideo({
         title,
         description,
         userId: (req.user as any).id,
-        videoData: req.file.buffer,
+        fileUrl,
         mimeType,
       });
 
@@ -393,7 +402,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.status(200).json(results);
   });
 
-  // === TELEGRAM WEBHOOK ===
+  // === TELEGRAM WEBHOOK (BigPekob bot) ===
   app.post("/api/telegram/webhook", express.json(), async (req, res) => {
     res.status(200).json({ ok: true });
     try {
@@ -403,8 +412,19 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // === CHATBOT WEBHOOK (anonymous chat bot) ===
+  app.post("/api/chatbot/webhook", express.json(), async (req, res) => {
+    res.status(200).json({ ok: true });
+    try {
+      await handleChatBotUpdate(req.body);
+    } catch (err) {
+      console.error("[chatbot] webhook error:", err);
+    }
+  });
+
   // Setup Telegram webhook on startup
   setupTelegramWebhook().catch(console.error);
+  setupChatBot().catch(console.error);
 
   // Seed database
   setTimeout(async () => {
