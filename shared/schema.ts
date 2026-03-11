@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp, unique, customType } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, unique, customType, bigint, boolean } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -56,6 +56,30 @@ export const comments = pgTable("comments", {
   videoId: integer("video_id").notNull(),
   content: text("content").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const vipUsers = pgTable("vip_users", {
+  id: serial("id").primaryKey(),
+  telegramId: bigint("telegram_id", { mode: "number" }).notNull().unique(),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const papDonations = pgTable("pap_donations", {
+  id: serial("id").primaryKey(),
+  telegramId: bigint("telegram_id", { mode: "number" }).notNull(),
+  gender: text("gender").notNull(), // 'male' | 'female'
+  fileId: text("file_id").notNull(),
+  mediaType: text("media_type").notNull(), // 'photo' | 'video'
+  caption: text("caption"),
+  isApproved: boolean("is_approved").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const channelConfig = pgTable("channel_config", {
+  id: serial("id").primaryKey(),
+  channelId: text("channel_id").notNull(),
+  lastPostedAt: timestamp("last_posted_at"),
 });
 
 // =================== RELATIONS ===================
@@ -124,6 +148,9 @@ export type InsertVideo = z.infer<typeof insertVideoSchema>;
 export type Follow = typeof follows.$inferSelect;
 export type Like = typeof likes.$inferSelect;
 export type Comment = typeof comments.$inferSelect;
+export type VipUser = typeof vipUsers.$inferSelect;
+export type PapDonation = typeof papDonations.$inferSelect;
+export type ChannelConfig = typeof channelConfig.$inferSelect;
 
 // Rich response types
 export type UserPublic = Pick<User, "id" | "username" | "displayName" | "bio" | "avatarData"> & {

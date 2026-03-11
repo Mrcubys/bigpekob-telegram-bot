@@ -5,7 +5,7 @@ import {
   Heart, MessageCircle, VolumeX, Volume2, Play,
   User as UserIcon, Upload, Home, X, Send,
   Loader2, Camera, LogOut, PlaySquare, ChevronDown,
-  KeyRound
+  KeyRound, Download, Star
 } from "lucide-react";
 import { clsx } from "clsx";
 
@@ -151,11 +151,15 @@ function TGVideoCard({
   isActive,
   user,
   onNeedLogin,
+  isVip,
+  telegramId,
 }: {
   video: VideoResponse;
   isActive: boolean;
   user: User | null | undefined;
   onNeedLogin: () => void;
+  isVip?: boolean;
+  telegramId?: number;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isMuted, setIsMuted] = useState(true);
@@ -293,6 +297,34 @@ function TGVideoCard({
             {isMuted ? <VolumeX className="w-5 h-5 text-white" /> : <Volume2 className="w-5 h-5 text-white" />}
           </div>
         </button>
+
+        {/* Download (VIP only) */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!isVip) {
+              alert("🌟 Fitur ini khusus VIP!\n\nUpgrade VIP lewat bot Telegram untuk bisa download video.");
+              return;
+            }
+            if (!telegramId) {
+              alert("Login via Telegram untuk download.");
+              return;
+            }
+            const a = document.createElement("a");
+            a.href = `/api/videos/${video.id}/download?telegram_id=${telegramId}`;
+            a.download = video.title || "video";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }}
+          className="flex flex-col items-center gap-1"
+          data-testid={`tg-download-btn-${video.id}`}
+        >
+          <div className={clsx("w-11 h-11 rounded-full flex items-center justify-center", isVip ? "bg-yellow-500/30" : "bg-black/40")}>
+            {isVip ? <Download className="w-5 h-5 text-yellow-400" /> : <Star className="w-5 h-5 text-zinc-400" />}
+          </div>
+          <span className="text-white/60 text-[9px]">{isVip ? "Unduh" : "VIP"}</span>
+        </button>
       </div>
 
       {showComments && (
@@ -308,7 +340,7 @@ function TGVideoCard({
 }
 
 // ─── Feed Tab ────────────────────────────────────────────────────────────────
-function FeedTab({ user, onNeedLogin }: { user: User | null | undefined; onNeedLogin: () => void }) {
+function FeedTab({ user, onNeedLogin, isVip, telegramId }: { user: User | null | undefined; onNeedLogin: () => void; isVip?: boolean; telegramId?: number }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -363,7 +395,7 @@ function FeedTab({ user, onNeedLogin }: { user: User | null | undefined; onNeedL
     >
       {videos.map((video, i) => (
         <div key={video.id} className="w-full h-full flex-shrink-0">
-          <TGVideoCard video={video} isActive={i === activeIndex} user={user} onNeedLogin={onNeedLogin} />
+          <TGVideoCard video={video} isActive={i === activeIndex} user={user} onNeedLogin={onNeedLogin} isVip={isVip} telegramId={telegramId} />
         </div>
       ))}
     </div>
@@ -785,6 +817,8 @@ export default function TelegramMiniApp() {
   const [showAuth, setShowAuth] = useState(false);
   const queryClient = useQueryClient();
 
+  const telegramId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
     if (tg) {
@@ -802,6 +836,20 @@ export default function TelegramMiniApp() {
       return res.json();
     },
   });
+
+  const { data: vipData } = useQuery<{ vip: boolean }>({
+    queryKey: ["/api/vip/check", telegramId],
+    queryFn: async () => {
+      if (!telegramId) return { vip: false };
+      const res = await fetch(`/api/vip/check?telegram_id=${telegramId}`);
+      if (!res.ok) return { vip: false };
+      return res.json();
+    },
+    enabled: !!telegramId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const isVip = vipData?.vip ?? false;
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
@@ -821,7 +869,7 @@ export default function TelegramMiniApp() {
       {/* Content area */}
       <div className="flex-1 overflow-hidden relative">
         <div className={tab === "feed" ? "block w-full h-full" : "hidden"}>
-          <FeedTab user={user} onNeedLogin={() => setShowAuth(true)} />
+          <FeedTab user={user} onNeedLogin={() => setShowAuth(true)} isVip={isVip} telegramId={telegramId} />
         </div>
         <div className={tab === "upload" ? "block w-full h-full" : "hidden"}>
           <UploadTab user={user} onNeedLogin={() => { setShowAuth(true); }} />

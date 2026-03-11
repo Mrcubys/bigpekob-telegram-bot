@@ -1,10 +1,11 @@
 import { db } from "./db";
 import {
-  users, videos, follows, likes, comments,
+  users, videos, follows, likes, comments, vipUsers, papDonations, channelConfig,
   type User, type InsertUser, type UpdateUserProfile,
   type Video, type VideoResponse, type UserPublic, type CommentResponse,
+  type VipUser, type PapDonation, type ChannelConfig,
 } from "@shared/schema";
-import { eq, desc, and, sql, ilike, or } from "drizzle-orm";
+import { eq, desc, and, sql, ilike, or, gt } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -45,6 +46,19 @@ export interface IStorage {
   // Search
   searchUsers(query: string, currentUserId?: number): Promise<UserPublic[]>;
   getUserPublicProfile(userId: number, currentUserId?: number): Promise<UserPublic | undefined>;
+
+  // VIP
+  isVipUser(telegramId: number): Promise<boolean>;
+  setVipUser(telegramId: number, expiresAt?: Date): Promise<VipUser>;
+
+  // PAP Donations
+  addPapDonation(data: { telegramId: number; gender: string; fileId: string; mediaType: string; caption?: string }): Promise<PapDonation>;
+  getPapDonations(gender: string): Promise<PapDonation[]>; // returns opposite gender
+
+  // Channel
+  getChannelConfig(): Promise<ChannelConfig | undefined>;
+  setChannelConfig(channelId: string): Promise<ChannelConfig>;
+  updateChannelLastPosted(id: number): Promise<void>;
 
   sessionStore: session.Store;
 }
@@ -357,6 +371,77 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId));
     
     return row as UserPublic | undefined;
+  }
+
+  // =========== VIP ===========
+
+  async isVipUser(telegramId: number): Promise<boolean> {
+    const [row] = await db.select().from(vipUsers)
+      .where(eq(vipUsers.telegramId, telegramId));
+    if (!row) return false;
+    if (row.expiresAt && row.expiresAt < new Date()) return false;
+    return true;
+  }
+
+  async setVipUser(telegramId: number, expiresAt?: Date): Promise<VipUser> {
+    const existing = await db.select().from(vipUsers).where(eq(vipUsers.telegramId, telegramId));
+    if (existing.length > 0) {
+      const [updated] = await db.update(vipUsers)
+        .set({ expiresAt: expiresAt ?? null })
+        .where(eq(vipUsers.telegramId, telegramId))
+        .returning();
+      return updated;
+    }
+    const [row] = await db.insert(vipUsers)
+      .values({ telegramId, expiresAt })
+      .returning();
+    return row;
+  }
+
+  // =========== PAP ===========
+
+  async addPapDonation(data: { telegramId: number; gender: string; fileId: string; mediaType: string; caption?: string }): Promise<PapDonation> {
+    const [row] = await db.insert(papDonations).values({
+      telegramId: data.telegramId,
+      gender: data.gender,
+      fileId: data.fileId,
+      mediaType: data.mediaType,
+      caption: data.caption,
+    }).returning();
+    return row;
+  }
+
+  async getPapDonations(gender: string): Promise<PapDonation[]> {
+    // If viewer is female, show male pap; if male, show female pap
+    const oppositeGender = gender === "female" ? "male" : "female";
+    return db.select().from(papDonations)
+      .where(and(eq(papDonations.gender, oppositeGender), eq(papDonations.isApproved, true)))
+      .orderBy(desc(papDonations.createdAt))
+      .limit(10);
+  }
+
+  // =========== CHANNEL ===========
+
+  async getChannelConfig(): Promise<ChannelConfig | undefined> {
+    const [row] = await db.select().from(channelConfig).limit(1);
+    return row;
+  }
+
+  async setChannelConfig(channelIdValue: string): Promise<ChannelConfig> {
+    const existing = await db.select().from(channelConfig).limit(1);
+    if (existing.length > 0) {
+      const [updated] = await db.update(channelConfig)
+        .set({ channelId: channelIdValue })
+        .where(eq(channelConfig.id, existing[0].id))
+        .returning();
+      return updated;
+    }
+    const [row] = await db.insert(channelConfig).values({ channelId: channelIdValue }).returning();
+    return row;
+  }
+
+  async updateChannelLastPosted(id: number): Promise<void> {
+    await db.update(channelConfig).set({ lastPostedAt: new Date() }).where(eq(channelConfig.id, id));
   }
 }
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-BigPekob is a TikTok-inspired short video sharing platform built as a full-stack web application. It features a mobile-first design with a vertical scroll-snap video feed, user authentication, video uploads, likes, comments, follows, and user discovery. On desktop, the app renders in a phone-screen container for an authentic mobile experience.
+BigPekob adalah platform berbagi video Indo/dewasa 18+ berbasis TikTok, dibangun sebagai full-stack web app. Fitur: feed video vertikal, upload, like, komentar, follow, Telegram Mini App, VIP via Telegram Stars, donasi PAP, dan channel auto-posting.
 
 Key features:
 - Full-screen vertical scroll-snap video feed ("For You" style)
@@ -11,7 +11,12 @@ Key features:
 - Like, comment, and follow social interactions
 - User discovery/search
 - Profile editing with base64 avatar support
-- Inbox placeholder page
+- **Telegram Mini App** at `/telegram` with Feed/Upload/Profile tabs
+- **VIP system** via Telegram Stars (50 Stars = 30 days VIP, enables video download)
+- **Video download** for VIP users (gated by `telegram_id` query param)
+- **Donasi PAP** conversation flow in bot (gender-based, privacy protected)
+- **Channel auto-posting** every hour (admin sets channel via `/setchannel`)
+- **Optimized video streaming** with in-memory cache (10 min TTL) + ETag support
 
 ## User Preferences
 
@@ -59,6 +64,9 @@ Preferred communication style: Simple, everyday language.
   - `follows` — followerId, followingId (unique pair)
   - `likes` — userId, videoId (unique pair)
   - `comments` — userId, videoId, content, createdAt
+  - `vip_users` — telegramId (bigint unique), expiresAt, createdAt
+  - `pap_donations` — telegramId, gender, fileId, mediaType, caption, isApproved, createdAt
+  - `channel_config` — channelId, lastPostedAt
 - **Sessions**: Stored in PostgreSQL using `connect-pg-simple`
 - **Video storage strategy**: Binary video data is stored in the `videoData` bytea column. This avoids external storage dependencies but may become a bottleneck for large libraries. The legacy `fileUrl` path still exists for backward compatibility.
 

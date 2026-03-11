@@ -153,12 +153,32 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.status(200).json(videosList);
   });
 
-  // Stream video from DB
+  // In-memory video cache (keyed by id, TTL 10 minutes)
+  const videoCache = new Map<number, { data: Buffer; mimeType: string; etag: string; cachedAt: number }>();
+  const VIDEO_CACHE_TTL = 10 * 60 * 1000;
+
+  async function getCachedVideoData(id: number) {
+    const cached = videoCache.get(id);
+    if (cached && Date.now() - cached.cachedAt < VIDEO_CACHE_TTL) return cached;
+    const videoData = await storage.getVideoData(id);
+    if (!videoData) return null;
+    const etag = `"${id}-${videoData.data.length}"`;
+    const entry = { ...videoData, etag, cachedAt: Date.now() };
+    videoCache.set(id, entry);
+    // Evict old entries if cache grows too large
+    if (videoCache.size > 30) {
+      const oldest = [...videoCache.entries()].sort((a, b) => a[1].cachedAt - b[1].cachedAt)[0];
+      videoCache.delete(oldest[0]);
+    }
+    return entry;
+  }
+
+  // Stream video from DB (optimized with cache + ETag)
   app.get("/api/videos/:id/stream", async (req, res) => {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
 
-    // Check if it's a file-based video
+    // Check if it's a file-based video (serve directly from disk - fastest)
     const [videoRow] = await db
       .select({ fileUrl: videos.fileUrl, mimeType: videos.mimeType })
       .from(videos)
@@ -166,21 +186,27 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
     if (!videoRow) return res.status(404).json({ message: "Video not found" });
 
-    // If file exists on disk, serve it
     if (videoRow.fileUrl) {
       const filePath = path.join(process.cwd(), videoRow.fileUrl.startsWith("/") ? videoRow.fileUrl.slice(1) : videoRow.fileUrl);
       if (fs.existsSync(filePath)) {
+        res.setHeader("Cache-Control", "public, max-age=86400");
         return res.redirect(videoRow.fileUrl);
       }
     }
 
-    // Serve from DB binary
-    const videoData = await storage.getVideoData(id);
-    if (!videoData) return res.status(404).json({ message: "Video data not found" });
+    const cached = await getCachedVideoData(id);
+    if (!cached) return res.status(404).json({ message: "Video data not found" });
 
-    const { data, mimeType } = videoData;
+    const { data, mimeType, etag } = cached;
     const totalSize = data.length;
     const rangeHeader = req.headers.range;
+
+    // ETag support — skip sending data if client already has it
+    res.setHeader("ETag", etag);
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    if (req.headers["if-none-match"] === etag) {
+      return res.status(304).end();
+    }
 
     res.setHeader("Content-Type", mimeType || "video/mp4");
     res.setHeader("Accept-Ranges", "bytes");
@@ -188,7 +214,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     if (rangeHeader) {
       const parts = rangeHeader.replace(/bytes=/, "").split("-");
       const start = parseInt(parts[0], 10);
-      const end = parts[1] ? parseInt(parts[1], 10) : totalSize - 1;
+      const end = parts[1] ? Math.min(parseInt(parts[1], 10), totalSize - 1) : Math.min(start + 5 * 1024 * 1024, totalSize - 1);
       const chunkSize = end - start + 1;
       res.status(206);
       res.setHeader("Content-Range", `bytes ${start}-${end}/${totalSize}`);
@@ -198,6 +224,51 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       res.setHeader("Content-Length", totalSize);
       res.status(200).end(data);
     }
+  });
+
+  // VIP check endpoint (for Mini App)
+  app.get("/api/vip/check", async (req, res) => {
+    const telegramId = parseInt(req.query.telegram_id as string);
+    if (isNaN(telegramId)) return res.status(400).json({ vip: false });
+    const isVip = await storage.isVipUser(telegramId);
+    res.json({ vip: isVip });
+  });
+
+  // Download video (VIP only)
+  app.get("/api/videos/:id/download", async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+
+    const telegramId = parseInt(req.query.telegram_id as string);
+    if (!isNaN(telegramId)) {
+      const isVip = await storage.isVipUser(telegramId);
+      if (!isVip) return res.status(403).json({ message: "VIP only" });
+    } else {
+      return res.status(403).json({ message: "VIP only" });
+    }
+
+    const [videoRow] = await db
+      .select({ fileUrl: videos.fileUrl, mimeType: videos.mimeType, title: videos.title })
+      .from(videos)
+      .where(eq(videos.id, id));
+    if (!videoRow) return res.status(404).json({ message: "Not found" });
+
+    const filename = `${videoRow.title?.replace(/[^a-z0-9]/gi, "_") || "video"}.mp4`;
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+
+    if (videoRow.fileUrl) {
+      const filePath = path.join(process.cwd(), videoRow.fileUrl.startsWith("/") ? videoRow.fileUrl.slice(1) : videoRow.fileUrl);
+      if (fs.existsSync(filePath)) {
+        res.setHeader("Content-Type", videoRow.mimeType || "video/mp4");
+        return fs.createReadStream(filePath).pipe(res);
+      }
+    }
+
+    const cached = await getCachedVideoData(id);
+    if (!cached) return res.status(404).json({ message: "Video data not found" });
+    res.setHeader("Content-Type", cached.mimeType || "video/mp4");
+    res.setHeader("Content-Length", cached.data.length);
+    res.end(cached.data);
   });
 
   app.post(api.videos.upload.path, uploader.single("file"), async (req, res) => {
