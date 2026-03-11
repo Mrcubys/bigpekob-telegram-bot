@@ -7,6 +7,9 @@ import { runStartupSeed } from "./seed";
 const app = express();
 const httpServer = createServer(app);
 
+// Trust Replit's reverse proxy (required for secure cookies + session to work in production)
+app.set("trust proxy", 1);
+
 declare module "http" {
   interface IncomingMessage {
     rawBody: unknown;

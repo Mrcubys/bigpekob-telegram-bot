@@ -64,8 +64,8 @@ function EditProfileModal({ user, onClose }: { user: any; onClose: () => void })
     setError("");
     updateMutation.mutate({
       username: trimmed !== user.username ? trimmed : undefined,
-      bio: bio.trim() || undefined,
-      avatarData: avatarData || undefined,
+      bio: bio.trim() !== (user.bio || "") ? bio.trim() : undefined,
+      avatarData: avatarData !== (user.avatarData || null) ? (avatarData || undefined) : undefined,
     });
   };
 

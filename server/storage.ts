@@ -83,8 +83,21 @@ export class DatabaseStorage implements IStorage {
         throw new Error("Username already taken");
       }
     }
+    // Filter out undefined values — Drizzle cannot execute SET with all-undefined fields
+    const updates: Record<string, any> = {};
+    if (profile.username !== undefined) updates.username = profile.username;
+    if (profile.displayName !== undefined) updates.displayName = profile.displayName;
+    if (profile.bio !== undefined) updates.bio = profile.bio;
+    if (profile.avatarData !== undefined) updates.avatarData = profile.avatarData;
+
+    // If nothing to update, just return current user
+    if (Object.keys(updates).length === 0) {
+      const current = await this.getUser(id);
+      return current!;
+    }
+
     const [user] = await db.update(users)
-      .set({ ...profile })
+      .set(updates)
       .where(eq(users.id, id))
       .returning();
     return user;
