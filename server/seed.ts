@@ -6,8 +6,8 @@ import path from "path";
 
 // Seed users that own the videos
 const SEED_USERS = [
-  { username: "rafnoxxx", password: "@Raffathoriq08", displayName: "@bigpekob" },
-  { username: "mamud", password: "@Raffathoriq08", displayName: null },
+  { username: "rafnoxxx", password: process.env.SEED_USER_PASSWORD ?? "", displayName: "@bigpekob" },
+  { username: "mamud", password: process.env.SEED_USER_PASSWORD ?? "", displayName: null },
 ];
 
 // Video manifest - all videos uploaded in dev with their metadata
