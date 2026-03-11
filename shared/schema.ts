@@ -92,6 +92,12 @@ export const telegramUsers = pgTable("telegram_users", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const siteSettings = pgTable("site_settings", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  value: text("value").notNull(),
+});
+
 // =================== RELATIONS ===================
 
 export const usersRelations = relations(users, ({ many }) => ({

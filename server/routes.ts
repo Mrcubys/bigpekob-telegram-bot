@@ -15,6 +15,7 @@ import { db } from "./db";
 import { eq } from "drizzle-orm";
 import { setupTelegramWebhook, handleTelegramUpdate } from "./telegram";
 import { handleChatBotUpdate, setupChatBot } from "./chatbot";
+import { handleDevBotUpdate, setupDevBot } from "./devbot";
 
 // Upload directory — must be defined BEFORE multer
 const uploadDir = path.join(process.cwd(), "uploads");
@@ -38,8 +39,12 @@ const uploader = multer({
 });
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
-  // Serve legacy file-based uploads
   app.use("/uploads", express.static(uploadDir));
+
+  app.get("/api/maintenance", async (_req, res) => {
+    const val = await storage.getSetting("maintenance_mode");
+    res.json({ maintenance: val === "true", message: await storage.getSetting("maintenance_message") || "Sedang maintenance, coba lagi nanti." });
+  });
 
   // === SESSION ===
   app.use(session({
@@ -233,12 +238,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     return entry;
   }
 
-  // Stream video from DB (optimized with cache + ETag)
   app.get("/api/videos/:id/stream", async (req, res) => {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
 
-    // Check if it's a file-based video (serve directly from disk - fastest)
     const [videoRow] = await db
       .select({ fileUrl: videos.fileUrl, mimeType: videos.mimeType })
       .from(videos)
@@ -249,8 +252,28 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     if (videoRow.fileUrl) {
       const filePath = path.join(process.cwd(), videoRow.fileUrl.startsWith("/") ? videoRow.fileUrl.slice(1) : videoRow.fileUrl);
       if (fs.existsSync(filePath)) {
+        const stat = fs.statSync(filePath);
+        const totalSize = stat.size;
+        const mime = videoRow.mimeType || "video/mp4";
+        const rangeHeader = req.headers.range;
+
+        res.setHeader("Accept-Ranges", "bytes");
         res.setHeader("Cache-Control", "public, max-age=86400");
-        return res.redirect(videoRow.fileUrl);
+        res.setHeader("Content-Type", mime);
+
+        if (rangeHeader) {
+          const parts = rangeHeader.replace(/bytes=/, "").split("-");
+          const start = parseInt(parts[0], 10);
+          const end = parts[1] ? Math.min(parseInt(parts[1], 10), totalSize - 1) : Math.min(start + 2 * 1024 * 1024, totalSize - 1);
+          res.status(206);
+          res.setHeader("Content-Range", `bytes ${start}-${end}/${totalSize}`);
+          res.setHeader("Content-Length", end - start + 1);
+          fs.createReadStream(filePath, { start, end }).pipe(res);
+        } else {
+          res.setHeader("Content-Length", totalSize);
+          fs.createReadStream(filePath).pipe(res);
+        }
+        return;
       }
     }
 
@@ -261,7 +284,6 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     const totalSize = data.length;
     const rangeHeader = req.headers.range;
 
-    // ETag support — skip sending data if client already has it
     res.setHeader("ETag", etag);
     res.setHeader("Cache-Control", "public, max-age=3600");
     if (req.headers["if-none-match"] === etag) {
@@ -274,7 +296,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     if (rangeHeader) {
       const parts = rangeHeader.replace(/bytes=/, "").split("-");
       const start = parseInt(parts[0], 10);
-      const end = parts[1] ? Math.min(parseInt(parts[1], 10), totalSize - 1) : Math.min(start + 5 * 1024 * 1024, totalSize - 1);
+      const end = parts[1] ? Math.min(parseInt(parts[1], 10), totalSize - 1) : Math.min(start + 2 * 1024 * 1024, totalSize - 1);
       const chunkSize = end - start + 1;
       res.status(206);
       res.setHeader("Content-Range", `bytes ${start}-${end}/${totalSize}`);
@@ -474,9 +496,18 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
-  // Setup Telegram webhook on startup
+  app.post("/api/devbot/webhook", express.json(), async (req, res) => {
+    res.status(200).json({ ok: true });
+    try {
+      await handleDevBotUpdate(req.body);
+    } catch (err) {
+      console.error("[devbot] webhook error:", err);
+    }
+  });
+
   setupTelegramWebhook().catch(console.error);
   setupChatBot().catch(console.error);
+  setupDevBot().catch(console.error);
 
   // Seed database
   setTimeout(async () => {

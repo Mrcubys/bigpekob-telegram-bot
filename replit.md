@@ -93,11 +93,17 @@ Preferred communication style: Simple, everyday language.
 - `SESSION_SECRET` — Secret for signing session cookies (has insecure fallback; must be set in production)
 - `TELEGRAM_BOT_TOKEN` — Bot token for @bigpekob_bot (Mini App, VIP, PAP, channel posting)
 - `TELEGRAM_CHAT_BOT_TOKEN` — Bot token for @bigpekob_chat_bot (anonymous chat)
+- `TELEGRAM_DEV_BOT_TOKEN` — Bot token for dev bot panel (stats, maintenance, AI chat)
+- `OPENROUTER_API_KEY` — API key for OpenRouter (used by dev bot AI chat feature, google/gemini-2.0-flash-001)
 
 ### Telegram Bot Notes
-- Both bots use **HTML parse mode** (`parse_mode: "HTML"`) for all messages — Markdown v1 breaks on bot usernames containing underscores (e.g. `@bigpekob_bot`)
-- Mini App auto-login: on mount, if `window.Telegram.WebApp.initDataUnsafe.user` exists, POST to `/api/auth/telegram` to auto-create/login the user
+- All three bots use **HTML parse mode** (`parse_mode: "HTML"`) for all messages — Markdown v1 breaks on bot usernames containing underscores (e.g. `@bigpekob_bot`)
+- All dynamic content interpolated into Telegram messages must go through `escHtml()` (replaces `&`, `<`, `>`)
+- Mini App auto-login: on mount, if `window.Telegram.WebApp.initDataUnsafe.user` exists, POST to `/api/auth/telegram` with initData HMAC verification
 - Users table has `telegram_id` column for linking Telegram accounts to app users
+- Dev bot panel (`server/devbot.ts`): stats dashboard, maintenance mode toggle, bot status check, webhook restart, AI chat (OpenRouter/Gemini), broadcast, recent error logs
+- Maintenance mode: stored in `site_settings` table, read via `/api/maintenance` endpoint, Mini App shows maintenance screen when active
+- `site_settings` table: key (text PK), value (text), for persistent settings like maintenance mode
 
 ### Key Third-Party Libraries
 

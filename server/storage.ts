@@ -1,6 +1,6 @@
 import { db } from "./db";
 import {
-  users, videos, follows, likes, comments, vipUsers, papDonations, channelConfig, telegramUsers,
+  users, videos, follows, likes, comments, vipUsers, papDonations, channelConfig, telegramUsers, siteSettings,
   type User, type InsertUser, type UpdateUserProfile,
   type Video, type VideoResponse, type UserPublic, type CommentResponse,
   type VipUser, type PapDonation, type ChannelConfig, type TelegramUser,
@@ -65,6 +65,13 @@ export interface IStorage {
   // Telegram Users (gender + profile)
   getTelegramUser(telegramId: number): Promise<TelegramUser | undefined>;
   upsertTelegramUser(data: { telegramId: number; firstName?: string; username?: string; gender?: string }): Promise<TelegramUser>;
+
+  // Site Settings
+  getSetting(key: string): Promise<string | undefined>;
+  setSetting(key: string, value: string): Promise<void>;
+
+  // Stats
+  getStats(): Promise<{ userCount: number; videoCount: number; vipCount: number }>;
 
   sessionStore: session.Store;
 }
@@ -498,6 +505,34 @@ export class DatabaseStorage implements IStorage {
       .values({ telegramId: data.telegramId, ...updates })
       .returning();
     return row;
+  }
+  // =========== SITE SETTINGS ===========
+
+  async getSetting(key: string): Promise<string | undefined> {
+    const [row] = await db.select().from(siteSettings).where(eq(siteSettings.key, key));
+    return row?.value;
+  }
+
+  async setSetting(key: string, value: string): Promise<void> {
+    const existing = await this.getSetting(key);
+    if (existing !== undefined) {
+      await db.update(siteSettings).set({ value }).where(eq(siteSettings.key, key));
+    } else {
+      await db.insert(siteSettings).values({ key, value });
+    }
+  }
+
+  // =========== STATS ===========
+
+  async getStats(): Promise<{ userCount: number; videoCount: number; vipCount: number }> {
+    const [uCount] = await db.select({ count: sql<number>`count(*)` }).from(users);
+    const [vCount] = await db.select({ count: sql<number>`count(*)` }).from(videos);
+    const [vipCount] = await db.select({ count: sql<number>`count(*)` }).from(vipUsers).where(gt(vipUsers.expiresAt!, new Date()));
+    return {
+      userCount: Number(uCount.count),
+      videoCount: Number(vCount.count),
+      vipCount: Number(vipCount.count),
+    };
   }
 }
 

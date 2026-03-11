@@ -164,35 +164,55 @@ function TGVideoCard({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isMuted, setIsMuted] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(false);
   const [localLiked, setLocalLiked] = useState(video.isLiked ?? false);
   const [localLikeCount, setLocalLikeCount] = useState(video.likeCount ?? 0);
   const [localCommentCount, setLocalCommentCount] = useState(video.commentCount ?? 0);
   const [showComments, setShowComments] = useState(false);
+  const playAttemptRef = useRef(0);
   const queryClient = useQueryClient();
 
   useEffect(() => {
     const el = videoRef.current;
     if (!el) return;
     if (isActive) {
-      el.play().then(() => setIsPlaying(true)).catch(() => {});
+      const attempt = ++playAttemptRef.current;
+      el.currentTime = 0;
+      const p = el.play();
+      if (p) p.then(() => { if (playAttemptRef.current === attempt) setIsPlaying(true); }).catch(() => {});
     } else {
+      playAttemptRef.current++;
       el.pause();
       setIsPlaying(false);
     }
   }, [isActive]);
 
-  const togglePlay = () => {
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el) return;
+    const onWaiting = () => setIsBuffering(true);
+    const onPlaying = () => { setIsBuffering(false); setIsPlaying(true); };
+    const onPause = () => setIsPlaying(false);
+    el.addEventListener("waiting", onWaiting);
+    el.addEventListener("playing", onPlaying);
+    el.addEventListener("pause", onPause);
+    return () => { el.removeEventListener("waiting", onWaiting); el.removeEventListener("playing", onPlaying); el.removeEventListener("pause", onPause); };
+  }, []);
+
+  const togglePlay = useCallback(() => {
     const el = videoRef.current;
     if (!el) return;
     if (el.paused) {
-      el.play().then(() => setIsPlaying(true)).catch(() => {});
+      const attempt = ++playAttemptRef.current;
+      el.play().then(() => { if (playAttemptRef.current === attempt) setIsPlaying(true); }).catch(() => {});
     } else {
+      playAttemptRef.current++;
       el.pause();
       setIsPlaying(false);
     }
-  };
+  }, []);
 
-  const handleLike = (e: React.MouseEvent) => {
+  const handleLike = (e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
     if (!user) { onNeedLogin(); return; }
     const wasLiked = localLiked;
@@ -211,7 +231,7 @@ function TGVideoCard({
       });
   };
 
-  const handleComment = (e: React.MouseEvent) => {
+  const handleComment = (e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
     setShowComments(true);
   };
@@ -229,28 +249,39 @@ function TGVideoCard({
     <div className="relative w-full h-full bg-black snap-start">
       <video
         ref={videoRef}
-        src={src}
+        src={isActive ? src : undefined}
+        poster={isActive ? undefined : ""}
         className="w-full h-full object-cover"
         loop
         muted={isMuted}
         playsInline
-        onClick={togglePlay}
-        preload={isActive ? "auto" : "metadata"}
+        preload="auto"
         data-testid={`tg-video-${video.id}`}
       />
 
-      {!isPlaying && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="w-16 h-16 bg-black/40 rounded-full flex items-center justify-center">
-            <Play className="w-8 h-8 text-white fill-white ml-1" />
-          </div>
+      <div
+        className="absolute inset-0 z-10"
+        onClick={togglePlay}
+        onTouchEnd={(e) => { e.preventDefault(); togglePlay(); }}
+        data-testid={`tg-video-tap-${video.id}`}
+      />
+
+      {(!isPlaying || isBuffering) && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+          {isBuffering ? (
+            <Loader2 className="w-10 h-10 text-white animate-spin" />
+          ) : (
+            <div className="w-16 h-16 bg-black/40 rounded-full flex items-center justify-center">
+              <Play className="w-8 h-8 text-white fill-white ml-1" />
+            </div>
+          )}
         </div>
       )}
 
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
 
       {/* Info bawah kiri */}
-      <div className="absolute bottom-[70px] left-0 right-[70px] px-4">
+      <div className="absolute bottom-[70px] left-0 right-[70px] px-4 z-20 pointer-events-none">
         <div className="flex items-center gap-2 mb-1.5">
           {video.author?.avatarData ? (
             <img src={`data:image/jpeg;base64,${video.author.avatarData}`} alt="" className="w-8 h-8 rounded-full object-cover border border-white/30" />
@@ -270,7 +301,7 @@ function TGVideoCard({
       </div>
 
       {/* Tombol kanan */}
-      <div className="absolute right-3 bottom-[75px] flex flex-col items-center gap-5">
+      <div className="absolute right-3 bottom-[75px] flex flex-col items-center gap-5 z-30">
         {/* Like */}
         <button onClick={handleLike} className="flex flex-col items-center gap-1" data-testid={`tg-like-btn-${video.id}`}>
           <div className={clsx("w-11 h-11 rounded-full flex items-center justify-center", localLiked ? "bg-red-500/20" : "bg-black/40")}>
@@ -351,14 +382,21 @@ function FeedTab({ user, onNeedLogin, isVip, telegramId }: { user: User | null |
       if (!res.ok) throw new Error("Failed");
       return res.json();
     },
+    staleTime: 30_000,
   });
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+    let ticking = false;
     const handleScroll = () => {
-      const index = Math.round(container.scrollTop / container.clientHeight);
-      setActiveIndex(index);
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const index = Math.round(container.scrollTop / container.clientHeight);
+        setActiveIndex(index);
+        ticking = false;
+      });
     };
     container.addEventListener("scroll", handleScroll, { passive: true });
     return () => container.removeEventListener("scroll", handleScroll);
@@ -387,17 +425,26 @@ function FeedTab({ user, onNeedLogin, isVip, telegramId }: { user: User | null |
     );
   }
 
+  const RENDER_WINDOW = 2;
+
   return (
     <div
       ref={containerRef}
       className="w-full h-full overflow-y-scroll snap-y snap-mandatory"
       style={{ scrollbarWidth: "none" }}
     >
-      {videos.map((video, i) => (
-        <div key={video.id} className="w-full h-full flex-shrink-0">
-          <TGVideoCard video={video} isActive={i === activeIndex} user={user} onNeedLogin={onNeedLogin} isVip={isVip} telegramId={telegramId} />
-        </div>
-      ))}
+      {videos.map((video, i) => {
+        const nearActive = Math.abs(i - activeIndex) <= RENDER_WINDOW;
+        return (
+          <div key={video.id} className="w-full h-full flex-shrink-0">
+            {nearActive ? (
+              <TGVideoCard video={video} isActive={i === activeIndex} user={user} onNeedLogin={onNeedLogin} isVip={isVip} telegramId={telegramId} />
+            ) : (
+              <div className="w-full h-full bg-black" />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -430,42 +477,63 @@ function UploadTab({ user, onNeedLogin }: { user: User | null | undefined; onNee
     );
   }
 
+  const MAX_FILE_SIZE = 100 * 1024 * 1024;
+
   const handleUpload = async () => {
     if (!file || !title.trim()) return;
+
+    if (file.size > MAX_FILE_SIZE) {
+      setErr(`File terlalu besar (${(file.size / 1024 / 1024).toFixed(1)} MB). Maksimal 100 MB.`);
+      return;
+    }
+
     setUploading(true);
     setErr("");
-    setProgress(10);
+    setProgress(0);
 
     const formData = new FormData();
     formData.append("file", file);
     formData.append("title", title.trim());
     if (desc.trim()) formData.append("description", desc.trim());
 
-    // Simulate progress while uploading (fetch doesn't support real progress)
-    const timer = setInterval(() => {
-      setProgress((p) => (p < 85 ? p + 5 : p));
-    }, 800);
-
     try {
-      const res = await fetch("/api/videos", {
-        method: "POST",
-        credentials: "include",
-        body: formData,
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/videos");
+        xhr.withCredentials = true;
+
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const pct = Math.round((e.loaded / e.total) * 95);
+            setProgress(pct);
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            setProgress(100);
+            resolve();
+          } else {
+            try {
+              const data = JSON.parse(xhr.responseText);
+              reject(new Error(data.message || `Error ${xhr.status}`));
+            } catch {
+              reject(new Error(`Error ${xhr.status}: Upload gagal`));
+            }
+          }
+        };
+
+        xhr.onerror = () => reject(new Error("Koneksi terputus. Cek internet kamu."));
+        xhr.ontimeout = () => reject(new Error("Upload timeout. Coba file yang lebih kecil."));
+        xhr.timeout = 5 * 60 * 1000;
+
+        xhr.send(formData);
       });
-
-      clearInterval(timer);
-      setProgress(100);
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.message || `Error ${res.status}: Upload gagal`);
-      }
 
       queryClient.invalidateQueries({ queryKey: ["/api/videos"] });
       setDone(true);
       setFile(null); setTitle(""); setDesc(""); setProgress(0);
     } catch (e: any) {
-      clearInterval(timer);
       setProgress(0);
       setErr(e.message || "Upload gagal. Pastikan kamu login dan coba lagi.");
     } finally {
@@ -502,7 +570,7 @@ function UploadTab({ user, onNeedLogin }: { user: User | null | undefined; onNee
             <>
               <PlaySquare className="w-10 h-10 text-primary" />
               <p className="text-white text-sm font-medium px-4 text-center line-clamp-2">{file.name}</p>
-              <p className="text-zinc-400 text-xs">{(file.size / 1024 / 1024).toFixed(1)} MB</p>
+              <p className={clsx("text-xs", file.size > 100 * 1024 * 1024 ? "text-red-400" : "text-zinc-400")}>{(file.size / 1024 / 1024).toFixed(1)} MB {file.size > 100 * 1024 * 1024 ? "(maks 100 MB)" : ""}</p>
             </>
           ) : (
             <>
@@ -898,6 +966,11 @@ export default function TelegramMiniApp() {
     })();
   }, [telegramId, autoLoginDone]);
 
+  const { data: maintData } = useQuery<{ maintenance: boolean; message: string }>({
+    queryKey: ["/api/maintenance"],
+    staleTime: 30_000,
+  });
+
   const { data: user } = useQuery<User | null>({
     queryKey: ["/api/auth/me"],
     queryFn: async () => {
@@ -944,6 +1017,20 @@ export default function TelegramMiniApp() {
     { key: "upload", icon: Upload, label: "Upload" },
     { key: "profile", icon: UserIcon, label: "Profil" },
   ];
+
+  if (maintData?.maintenance) {
+    return (
+      <div className="w-full h-screen bg-zinc-950 flex items-center justify-center px-8">
+        <div className="text-center">
+          <div className="w-20 h-20 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-5">
+            <span className="text-4xl">🔧</span>
+          </div>
+          <h1 className="text-white font-bold text-2xl mb-2">Maintenance</h1>
+          <p className="text-zinc-400 text-sm leading-relaxed">{maintData.message}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-screen bg-black overflow-hidden relative flex flex-col">
