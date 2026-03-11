@@ -97,6 +97,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
 });
 
 export const updateUserProfileSchema = z.object({
+  username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers and underscores").optional(),
   displayName: z.string().max(50).optional(),
   bio: z.string().max(200).optional(),
   avatarData: z.string().optional(),

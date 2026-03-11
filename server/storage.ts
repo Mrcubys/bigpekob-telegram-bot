@@ -77,6 +77,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUserProfile(id: number, profile: UpdateUserProfile): Promise<User> {
+    if (profile.username) {
+      const existing = await this.getUserByUsername(profile.username);
+      if (existing && existing.id !== id) {
+        throw new Error("Username already taken");
+      }
+    }
     const [user] = await db.update(users)
       .set({ ...profile })
       .where(eq(users.id, id))

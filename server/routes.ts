@@ -130,9 +130,12 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const user = await storage.updateUserProfile((req.user as any).id, input);
       const { password: _, ...safeUser } = user as any;
       res.status(200).json(safeUser);
-    } catch (err) {
+    } catch (err: any) {
       if (err instanceof z.ZodError) {
         return res.status(400).json({ message: err.errors[0].message });
+      }
+      if (err.message === "Username already taken") {
+        return res.status(409).json({ message: "Username already taken" });
       }
       res.status(500).json({ message: "Internal server error" });
     }

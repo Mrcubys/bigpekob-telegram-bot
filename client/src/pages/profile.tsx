@@ -9,14 +9,14 @@ import { useQueryClient, useMutation } from "@tanstack/react-query";
 
 function EditProfileModal({ user, onClose }: { user: any; onClose: () => void }) {
   const queryClient = useQueryClient();
-  const [displayName, setDisplayName] = useState(user.displayName || "");
+  const [username, setUsername] = useState(user.username || "");
   const [bio, setBio] = useState(user.bio || "");
   const [avatarData, setAvatarData] = useState<string | null>(user.avatarData || null);
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const updateMutation = useMutation({
-    mutationFn: async (data: { displayName?: string; bio?: string; avatarData?: string }) => {
+    mutationFn: async (data: { username?: string; bio?: string; avatarData?: string }) => {
       const res = await fetch("/api/auth/profile", {
         method: "PUT",
         credentials: "include",
@@ -52,8 +52,18 @@ function EditProfileModal({ user, onClose }: { user: any; onClose: () => void })
   };
 
   const handleSave = () => {
+    const trimmed = username.trim();
+    if (!trimmed || trimmed.length < 3) {
+      setError("Username must be at least 3 characters");
+      return;
+    }
+    if (!/^[a-zA-Z0-9_]+$/.test(trimmed)) {
+      setError("Username can only contain letters, numbers and underscores");
+      return;
+    }
+    setError("");
     updateMutation.mutate({
-      displayName: displayName.trim() || undefined,
+      username: trimmed !== user.username ? trimmed : undefined,
       bio: bio.trim() || undefined,
       avatarData: avatarData || undefined,
     });
@@ -95,19 +105,22 @@ function EditProfileModal({ user, onClose }: { user: any; onClose: () => void })
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
         </div>
 
-        {/* Display Name */}
+        {/* Username */}
         <div>
-          <label className="block text-zinc-400 text-sm font-medium mb-2">Display Name</label>
-          <input
-            type="text"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            placeholder={`@${user.username}`}
-            maxLength={50}
-            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:border-primary transition"
-            data-testid="input-display-name"
-          />
-          <p className="text-zinc-600 text-xs mt-1 text-right">{displayName.length}/50</p>
+          <label className="block text-zinc-400 text-sm font-medium mb-2">Username</label>
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 text-[15px]">@</span>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, ""))}
+              placeholder="username"
+              maxLength={30}
+              className="w-full bg-zinc-900 border border-zinc-800 rounded-xl pl-8 pr-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:border-primary transition"
+              data-testid="input-username"
+            />
+          </div>
+          <p className="text-zinc-600 text-xs mt-1">Letters, numbers and underscores only</p>
         </div>
 
         {/* Bio */}
