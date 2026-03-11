@@ -12,10 +12,10 @@ Key features:
 - User discovery/search
 - Profile editing with base64 avatar support + **profile photo upload** (click avatar)
 - **Telegram Mini App** at `/telegram` with Feed/Upload/Profile tabs
-- **VIP system** via Telegram Stars (100 Stars = 30 days VIP, enables video download + exclusive content access)
+- **VIP system** via Telegram Stars (100 Stars = 30 days VIP, enables video download + exclusive content access); auto-VIP for @rafnoxxx and @bahlillahadila on login; VIP users get blue checkmark badge next to their name
 - **Video download** for VIP users (gated by `telegram_id` query param)
 - **Donasi PAP** conversation flow in bot (gender-based, privacy protected)
-- **Channel auto-posting** every hour (6 rotating templates with video titles list)
+- **Channel auto-posting** every hour (20 rotating templates — VIP promo, app intro, upload CTA, chat anonim, video terbaru, PAP donasi, konten eksklusif, fitur lengkap, greeting harian, top pick, perbandingan VIP/biasa, statistik, koleksi video, rahasia VIP, creator CTA, rekomendasi malam, quick recap, promo terbatas, dan perbandingan platform)
 - **`/chatkechannel`** command: member kirim pesan anonim ke channel BigPekob
 - **Optimized video streaming** with in-memory cache (10 min TTL) + ETag support
 - **Performance**: `avatarData` excluded from video/comment list queries to avoid huge JSON payloads; avatars loaded lazily via `/api/users/:id/avatar` with client-side cache; video feed uses infinite scroll pagination (20 per page)

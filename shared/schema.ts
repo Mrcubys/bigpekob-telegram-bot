@@ -178,8 +178,10 @@ export type UserPublic = Pick<User, "id" | "username" | "displayName" | "bio" | 
   isFollowing?: boolean;
 };
 
+export type VideoAuthor = Pick<User, "id" | "username" | "displayName"> & { isVip?: boolean };
+
 export type VideoResponse = Omit<Video, "videoData"> & {
-  author?: Pick<User, "id" | "username" | "displayName">;
+  author?: VideoAuthor;
   likeCount: number;
   commentCount: number;
   isLiked?: boolean;

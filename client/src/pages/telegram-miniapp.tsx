@@ -5,7 +5,8 @@ import {
   Heart, MessageCircle, VolumeX, Volume2, Play,
   User as UserIcon, Upload, Home, X, Send,
   Loader2, Camera, LogOut, PlaySquare, ChevronDown,
-  KeyRound, Download, Star, Lock, CheckSquare, Square
+  KeyRound, Download, Star, Lock, CheckSquare, Square,
+  BadgeCheck
 } from "lucide-react";
 import { clsx } from "clsx";
 
@@ -305,16 +306,20 @@ function TGVideoCard({
       />
 
       {video.isExclusive && !isVip && (
-        <div className="absolute inset-0 z-30 bg-black/80 flex items-center justify-center flex-col gap-3">
+        <div
+          className="absolute inset-0 z-30 bg-black/80 flex items-center justify-center flex-col gap-3 cursor-pointer"
+          onClick={() => window.open("https://t.me/bigpekob_bot", "_blank")}
+          data-testid={`vip-lock-overlay-${video.id}`}
+        >
           <div className="w-20 h-20 bg-yellow-500/20 rounded-full flex items-center justify-center">
             <Lock className="w-10 h-10 text-yellow-400" />
           </div>
           <p className="text-white font-bold text-lg">Konten Eksklusif</p>
           <p className="text-zinc-400 text-sm text-center px-8">Upgrade ke VIP untuk nonton video eksklusif ini</p>
-          <div className="flex items-center gap-1.5 mt-1 bg-yellow-500/20 px-4 py-2 rounded-full">
+          <button className="flex items-center gap-1.5 mt-1 bg-yellow-500/20 hover:bg-yellow-500/30 px-4 py-2 rounded-full transition-colors">
             <Star className="w-4 h-4 text-yellow-400" />
-            <span className="text-yellow-300 text-sm font-semibold">100 Stars = 30 Hari VIP</span>
-          </div>
+            <span className="text-yellow-300 text-sm font-semibold">Upgrade VIP — 100 Stars</span>
+          </button>
         </div>
       )}
 
@@ -342,17 +347,29 @@ function TGVideoCard({
               <UserIcon className="w-4 h-4 text-white" />
             </div>
           )}
-          <span className="text-white font-semibold text-sm drop-shadow">
+          <span className="text-white font-semibold text-sm drop-shadow flex items-center gap-1">
             {video.author?.displayName || `@${video.author?.username}`}
+            {video.author?.isVip && (
+              <BadgeCheck className="w-4 h-4 text-blue-400 fill-blue-400/20 flex-shrink-0" />
+            )}
           </span>
         </div>
         <div className="flex items-center gap-1.5">
           <p className="text-white text-sm font-medium line-clamp-2 drop-shadow flex-1">{video.title}</p>
           {video.isExclusive && (
-            <span className="flex items-center gap-1 bg-yellow-500/30 px-2 py-0.5 rounded-full flex-shrink-0">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!isVip) {
+                  window.open("https://t.me/bigpekob_bot", "_blank");
+                }
+              }}
+              className="flex items-center gap-1 bg-yellow-500/30 px-2 py-0.5 rounded-full flex-shrink-0 pointer-events-auto"
+              data-testid={`vip-badge-${video.id}`}
+            >
               <Lock className="w-3 h-3 text-yellow-300" />
               <span className="text-yellow-300 text-[10px] font-bold">VIP</span>
-            </span>
+            </button>
           )}
         </div>
         {video.description && (
@@ -739,7 +756,7 @@ function UploadTab({ user, onNeedLogin }: { user: User | null | undefined; onNee
 }
 
 // ─── Profile Tab ─────────────────────────────────────────────────────────────
-function ProfileTab({ user, onNeedLogin, onLogout }: { user: User | null | undefined; onNeedLogin: () => void; onLogout: () => void }) {
+function ProfileTab({ user, onNeedLogin, onLogout, isVip }: { user: User | null | undefined; onNeedLogin: () => void; onLogout: () => void; isVip?: boolean }) {
   const [editMode, setEditMode] = useState(false);
   const [username, setUsername] = useState(user?.username || "");
   const [displayName, setDisplayName] = useState(user?.displayName || "");
@@ -837,7 +854,10 @@ function ProfileTab({ user, onNeedLogin, onLogout }: { user: User | null | undef
             />
           </label>
           <div className="flex-1 min-w-0">
-            <p className="text-white font-bold text-lg leading-tight">{user.displayName || `@${user.username}`}</p>
+            <p className="text-white font-bold text-lg leading-tight flex items-center gap-1.5">
+              {user.displayName || `@${user.username}`}
+              {isVip && <BadgeCheck className="w-5 h-5 text-blue-400 fill-blue-400/20 flex-shrink-0" />}
+            </p>
             <p className="text-zinc-400 text-sm">@{user.username}</p>
             {user.bio && <p className="text-zinc-300 text-sm mt-1 line-clamp-2">{user.bio}</p>}
             <p className="text-zinc-500 text-xs mt-1">{myVideos.length} video</p>
@@ -1149,7 +1169,7 @@ export default function TelegramMiniApp() {
           <UploadTab user={user} onNeedLogin={handleNeedLogin} />
         </div>
         <div className={tab === "profile" ? "block w-full h-full" : "hidden"}>
-          <ProfileTab user={user} onNeedLogin={handleNeedLogin} onLogout={handleLogout} />
+          <ProfileTab user={user} onNeedLogin={handleNeedLogin} onLogout={handleLogout} isVip={isVip} />
         </div>
       </div>
 

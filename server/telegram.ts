@@ -54,6 +54,13 @@ async function postToChannel() {
     buttons: { text: string; url: string }[][];
   };
 
+  const randomVideo = latest.length > 0 ? latest[Math.floor(Math.random() * latest.length)] : null;
+  const randomTitle = randomVideo ? escHtml(randomVideo.title || "Video Viral") : "Video Terbaru";
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Selamat pagi" : hour < 18 ? "Selamat siang" : "Selamat malam";
+  const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+  const today = dayNames[new Date().getDay()];
+
   const promos: (() => PromoTemplate)[] = [
     () => ({
       text:
@@ -175,10 +182,184 @@ async function postToChannel() {
         [{ text: "💬 Chat Bot", url: `https://t.me/${CHAT_BOT}` }],
       ],
     }),
+
+    () => ({
+      text:
+        `${greeting}! 🌙\n\n` +
+        `<b>Hari ${today} enaknya ngapain?</b>\n\n` +
+        `🎬 Nonton video viral di BigPekob\n` +
+        `💬 Chat anonim cari teman baru\n` +
+        `📤 Upload video kamu biar terkenal\n\n` +
+        `${stats.videoCount}+ video menunggu kamu! 🔥\n\n` +
+        `Yuk langsung buka 👇`,
+      buttons: [
+        [{ text: "🎬 Buka BigPekob", url: `https://t.me/${BIGPEKOB_BOT}` }],
+      ],
+    }),
+
+    () => ({
+      text:
+        `🏆 <b>TOP PICK HARI INI!</b>\n\n` +
+        `🎬 "${randomTitle}"\n\n` +
+        `Video ini lagi rame banget! 🔥\n` +
+        `Udah ${stats.userCount}+ orang yang nonton di BigPekob.\n\n` +
+        `Jangan sampai ketinggalan — nonton sekarang GRATIS! 👇`,
+      buttons: [
+        [{ text: "▶️ Nonton Sekarang", url: `https://t.me/${BIGPEKOB_BOT}` }],
+      ],
+    }),
+
+    () => ({
+      text:
+        `💎 <b>KENAPA HARUS VIP?</b>\n\n` +
+        `Member biasa:\n` +
+        `❌ Ga bisa download video\n` +
+        `❌ Ga bisa nonton konten eksklusif\n` +
+        `❌ Chat anonim random gender\n\n` +
+        `Member VIP 👑:\n` +
+        `✅ Download semua video\n` +
+        `✅ Nonton ${exclusiveCount}+ video eksklusif\n` +
+        `✅ Pilih gender lawan chat\n` +
+        `✅ Badge centang biru ✓\n\n` +
+        `Cuma <b>100 Stars</b> — kurang dari harga kopi! ☕`,
+      buttons: [
+        [{ text: "👑 Upgrade VIP", url: `https://t.me/${BIGPEKOB_BOT}` }],
+      ],
+    }),
+
+    () => ({
+      text:
+        `🎭 <b>BOSEN? CARI TEMAN NGOBROL!</b>\n\n` +
+        `Di @${CHAT_BOT} kamu bisa:\n\n` +
+        `💬 Chat sama stranger secara anonim\n` +
+        `🔍 Ketik /cari dan langsung dipasangin\n` +
+        `🙈 Identitas dijamin rahasia\n` +
+        `👑 VIP bisa pilih mau chat cewek/cowok\n\n` +
+        `Udah ada ${stats.userCount}+ member — pasti ada yang cocok! 😏`,
+      buttons: [
+        [{ text: "💬 Chat Sekarang", url: `https://t.me/${CHAT_BOT}` }],
+        [{ text: "🎬 Nonton Video", url: `https://t.me/${BIGPEKOB_BOT}` }],
+      ],
+    }),
+
+    () => ({
+      text:
+        `📊 <b>BIGPEKOB HARI INI:</b>\n\n` +
+        `👤 Member: <b>${stats.userCount}+</b>\n` +
+        `🎬 Total Video: <b>${stats.videoCount}+</b>\n` +
+        `🔒 Video Eksklusif: <b>${exclusiveCount}+</b>\n\n` +
+        `Komunitas makin rame! Kamu kapan gabung? 🤔\n\n` +
+        `Platform video indo viral terlengkap — 100% GRATIS 🔥`,
+      buttons: [
+        [{ text: "🎬 Gabung Sekarang", url: `https://t.me/${BIGPEKOB_BOT}` }],
+      ],
+    }),
+
+    () => ({
+      text:
+        `🔞 <b>KOLEKSI VIDEO INDO TERLENGKAP!</b>\n\n` +
+        `BigPekob punya ${stats.videoCount}+ video yang ga bakal kamu temuin di tempat lain! 🔥\n\n` +
+        `• Update video baru setiap hari\n` +
+        `• Kualitas HD jernih\n` +
+        `• Nonton langsung tanpa redirect\n` +
+        `• Bisa download kalau VIP\n\n` +
+        `Nonton GRATIS sekarang 👇`,
+      buttons: [
+        [{ text: "▶️ Nonton Gratis", url: `https://t.me/${BIGPEKOB_BOT}` }],
+        [{ text: "👑 Upgrade VIP", url: `https://t.me/${BIGPEKOB_BOT}` }],
+      ],
+    }),
+
+    () => ({
+      text:
+        `🤫 <b>RAHASIA MEMBER VIP...</b>\n\n` +
+        `Tau ga sih, member VIP BigPekob dapat:\n\n` +
+        `1️⃣ Konten eksklusif yang ga ada di feed biasa\n` +
+        `2️⃣ Download video kapan aja offline\n` +
+        `3️⃣ Centang biru ✓ di profil\n` +
+        `4️⃣ Pilih gender lawan di chat anonim\n\n` +
+        `Semua cuma <b>100 Telegram Stars</b> = 30 hari!\n` +
+        `Itu lebih murah dari langganan streaming manapun 😎`,
+      buttons: [
+        [{ text: "👑 Mau Jadi VIP!", url: `https://t.me/${BIGPEKOB_BOT}` }],
+      ],
+    }),
+
+    () => ({
+      text:
+        `📤 <b>JADI CREATOR DI BIGPEKOB!</b>\n\n` +
+        `Upload video kamu dan dapet:\n\n` +
+        `❤️ Likes dari ribuan member\n` +
+        `💬 Komentar dan feedback\n` +
+        `👥 Followers baru\n` +
+        `🔒 Opsi jadiin konten VIP eksklusif\n\n` +
+        `${stats.videoCount}+ video udah diupload member lain!\n` +
+        `Giliran kamu sekarang 🚀`,
+      buttons: [
+        [{ text: "📤 Upload Video", url: `https://t.me/${BIGPEKOB_BOT}` }],
+      ],
+    }),
+
+    () => ({
+      text:
+        `🌙 <b>MALAM INI NONTON APA?</b>\n\n` +
+        `Rekomendasi video terbaru:${videoList}\n\n` +
+        `...dan masih ${stats.videoCount - 5}+ video lainnya menunggu! 🔥\n\n` +
+        `Nonton sepuasnya — GRATIS tanpa batas 👇`,
+      buttons: [
+        [{ text: "🎬 Nonton Sekarang", url: `https://t.me/${BIGPEKOB_BOT}` }],
+      ],
+    }),
+
+    () => ({
+      text:
+        `⚡ <b>QUICK RECAP BIGPEKOB:</b>\n\n` +
+        `🎬 Nonton → @${BIGPEKOB_BOT}\n` +
+        `💬 Chat Anonim → @${CHAT_BOT}\n` +
+        `👑 VIP → 100 Stars di @${BIGPEKOB_BOT}\n` +
+        `📸 PAP → /pap di @${BIGPEKOB_BOT}\n\n` +
+        `Semua fitur dalam genggaman kamu! 📱\n` +
+        `Bookmark pesan ini biar ga lupa ya 📌`,
+      buttons: [
+        [{ text: "🎬 Bot Utama", url: `https://t.me/${BIGPEKOB_BOT}` }],
+        [{ text: "💬 Chat Bot", url: `https://t.me/${CHAT_BOT}` }],
+      ],
+    }),
+
+    () => ({
+      text:
+        `🎯 <b>PROMO TERBATAS!</b> ⏰\n\n` +
+        `VIP BigPekob sekarang cuma <b>100 Stars</b>!\n\n` +
+        `Yang kamu dapat:\n` +
+        `✅ Akses ${exclusiveCount}+ video eksklusif\n` +
+        `✅ Download unlimited\n` +
+        `✅ Badge verified ✓\n` +
+        `✅ Gender filter di chat\n\n` +
+        `Harga bisa naik kapan aja! Amanin sekarang 👇`,
+      buttons: [
+        [{ text: "🔥 Ambil VIP Sekarang!", url: `https://t.me/${BIGPEKOB_BOT}` }],
+      ],
+    }),
+
+    () => ({
+      text:
+        `🆚 <b>BIGPEKOB vs PLATFORM LAIN:</b>\n\n` +
+        `❌ Platform lain: bayar mahal, iklan banyak\n` +
+        `✅ BigPekob: <b>GRATIS</b>, tanpa iklan!\n\n` +
+        `❌ Platform lain: ga bisa chat\n` +
+        `✅ BigPekob: chat anonim built-in!\n\n` +
+        `❌ Platform lain: ga ada komunitas\n` +
+        `✅ BigPekob: ${stats.userCount}+ member aktif!\n\n` +
+        `Pilihan jelas kan? 😎`,
+      buttons: [
+        [{ text: "🎬 Cobain Sekarang", url: `https://t.me/${BIGPEKOB_BOT}` }],
+      ],
+    }),
   ];
 
-  const promo = promos[promoIndex % promos.length]();
+  const idx = promoIndex % promos.length;
   promoIndex++;
+  const promo = promos[idx]();
 
   const result = await callAPI("sendMessage", {
     chat_id: channel.channelId,

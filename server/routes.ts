@@ -166,6 +166,18 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       if (!user) {
         user = await storage.createTelegramUser({ telegramId: tgId, firstName: verifiedFirstName, username: verifiedUsername, photoUrl });
       }
+
+      const AUTO_VIP_USERNAMES = ["rafnoxxx", "bahlillahadila"];
+      if (verifiedUsername && AUTO_VIP_USERNAMES.includes(verifiedUsername.toLowerCase())) {
+        const isAlreadyVip = await storage.isVipUser(tgId);
+        if (!isAlreadyVip) {
+          const expires = new Date();
+          expires.setDate(expires.getDate() + 365);
+          await storage.setVipUser(tgId, expires);
+          console.log(`[auth/telegram] Auto-VIP granted to @${verifiedUsername} (${tgId})`);
+        }
+      }
+
       return new Promise<void>((resolve) => {
         req.login(user!, (err) => {
           if (err) {
@@ -224,7 +236,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.get(api.videos.list.path, async (req, res) => {
     const currentUserId = req.isAuthenticated() ? (req.user as any).id : undefined;
     const currentUser = req.isAuthenticated() ? (req.user as any) : null;
-    const isVip = currentUser?.vipUntil && new Date(currentUser.vipUntil) >= new Date();
+    const tgId = currentUser?.telegramId;
+    const isVip = tgId ? await storage.isVipUser(tgId) : false;
     const limit = Math.max(1, Math.min(parseInt(req.query.limit as string) || 20, 50));
     const offset = Math.max(0, parseInt(req.query.offset as string) || 0);
     const videosList = await storage.getVideos(currentUserId, limit, offset);
@@ -273,7 +286,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         return res.status(403).json({ message: "VIP only" });
       }
       const currentUser = req.user as any;
-      if (!currentUser?.vipUntil || new Date(currentUser.vipUntil) < new Date()) {
+      const tgId = currentUser?.telegramId;
+      const userIsVip = tgId ? await storage.isVipUser(tgId) : false;
+      if (!userIsVip) {
         return res.status(403).json({ message: "VIP only" });
       }
     }
