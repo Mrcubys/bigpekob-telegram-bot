@@ -91,8 +91,8 @@ async function buildAll() {
       entryPoints: ["server/vercel-entry.ts"],
       platform: "node",
       bundle: true,
-      format: "cjs",
-      outfile: ".vercel/output/functions/api/index.func/index.js",
+      format: "esm",
+      outfile: ".vercel/output/functions/api/index.func/index.mjs",
       define: {
         "process.env.NODE_ENV": '"production"',
         "process.env.VERCEL": '"1"',
@@ -107,7 +107,7 @@ async function buildAll() {
       ".vercel/output/functions/api/index.func/.vc-config.json",
       JSON.stringify({
         runtime: "nodejs20.x",
-        handler: "index.js",
+        handler: "index.mjs",
         launcherType: "Nodejs",
         maxDuration: 30,
       }, null, 2)
