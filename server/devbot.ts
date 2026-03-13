@@ -3,7 +3,7 @@ import { storage } from "./storage";
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN_DEV_PANEL;
 const MAIN_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN_MAIN;
 const CHAT_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN_CHAT;
-const DOMAIN = process.env.VERCEL_URL || process.env.REPLIT_DOMAINS?.split(",")[0] || "bigpekob.vercel.app";
+const DOMAIN = process.env.APP_URL?.replace("https://", "") || process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL || process.env.REPLIT_DOMAINS?.split(",")[0] || "bigpekob-telegram-bot.vercel.app";
 const WEBHOOK_URL = `https://${DOMAIN}/api/devbot/webhook`;
 
 const ALLOWED_USERNAMES = new Set(["rafnoxxx", "bahlillahadila"]);
