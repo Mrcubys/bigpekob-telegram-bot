@@ -1,37 +1,35 @@
+/**
+ * Vercel Node Function entrypoint.
+ * Loads prebuilt server handler from dist/handler.cjs produced by `npm run build`.
+ */
+
 import type { IncomingMessage, ServerResponse } from "http";
-import { createApp } from "../server/app";
 
-let handler: ((req: IncomingMessage, res: ServerResponse) => void) | null = null;
-let initPromise: Promise<void> | null = null;
+let cachedHandler: ((req: IncomingMessage, res: ServerResponse) => unknown) | null = null;
 
-async function ensureHandler() {
-  if (!initPromise) {
-    initPromise = createApp()
-      .then(({ app }) => {
-        handler = app as unknown as (req: IncomingMessage, res: ServerResponse) => void;
-      })
-      .catch((err) => {
-        initPromise = null;
-        throw err;
-      });
-  }
-
-  await initPromise;
-}
-
-export default async function vercelHandler(req: IncomingMessage, res: ServerResponse) {
+export default async function handler(req: IncomingMessage, res: ServerResponse) {
   try {
-    await ensureHandler();
-    handler!(req, res);
+    if (!cachedHandler) {
+      const mod: any = await import("../dist/handler.cjs");
+      if (typeof mod.default === "function") {
+        cachedHandler = mod.default;
+      } else if (typeof mod.getHandler === "function") {
+        cachedHandler = await mod.getHandler();
+      } else {
+        throw new Error("dist/handler.cjs does not export a handler function");
+      }
+    }
+
+    return cachedHandler(req, res);
   } catch (err: any) {
-    console.error("[vercel] handler init error:", err);
-    if (!res.headersSent) {
-      res.statusCode = 500;
+    console.error("[vercel] api bootstrap error:", err);
+    if (!(res as any).headersSent) {
+      (res as any).statusCode = 500;
       res.setHeader("Content-Type", "application/json");
       res.end(
         JSON.stringify({
           ok: false,
-          error: "Server initialization failed",
+          error: "Server bootstrap failed",
           message: err?.message ?? String(err),
         }),
       );

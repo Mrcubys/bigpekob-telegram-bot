@@ -1096,10 +1096,18 @@ export default function TelegramMiniApp() {
       try {
         const meRes = await fetch("/api/auth/me", { credentials: "include" });
         if (meRes.ok) {
-          const meData = await meRes.json();
-          queryClient.setQueryData(["/api/auth/me"], meData);
-          return;
+          const type = meRes.headers.get("content-type") || "";
+          if (type.includes("application/json")) {
+            const meData = await meRes.json();
+            queryClient.setQueryData(["/api/auth/me"], meData);
+            return;
+          }
         }
+        if (meRes.status !== 401) {
+          const txt = await meRes.text().catch(() => "");
+          console.warn("[miniapp] /api/auth/me non-json response:", txt.slice(0, 120));
+        }
+
         const res = await fetch("/api/auth/telegram", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1113,8 +1121,15 @@ export default function TelegramMiniApp() {
           }),
         });
         if (res.ok) {
-          const userData = await res.json();
-          queryClient.setQueryData(["/api/auth/me"], userData);
+          const type = res.headers.get("content-type") || "";
+          if (type.includes("application/json")) {
+            const userData = await res.json();
+            queryClient.setQueryData(["/api/auth/me"], userData);
+          } else {
+            const txt = await res.text().catch(() => "");
+            console.warn("[miniapp] /api/auth/telegram non-json response:", txt.slice(0, 120));
+          }
+          return;
         }
       } catch {}
     })();
