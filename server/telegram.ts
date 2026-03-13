@@ -4,7 +4,7 @@ function escHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-const TOKEN = (process.env.MAIN_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN)!;
+const TOKEN = (process.env.TELEGRAM_BOT_TOKEN_MAIN)!;
 const DOMAIN = process.env.VERCEL_URL || process.env.REPLIT_DOMAINS?.split(",")[0] || "bigpekob.vercel.app";
 const WEBHOOK_URL = `https://${DOMAIN}/api/telegram/webhook`;
 const MINI_APP_URL = `https://${DOMAIN}/telegram`;
@@ -427,7 +427,7 @@ export async function postToChannel() {
 
 export async function setupTelegramWebhook() {
   if (!TOKEN) {
-    console.warn("[telegram] TELEGRAM_BOT_TOKEN belum diset");
+    console.warn("[telegram] TELEGRAM_BOT_TOKEN_MAIN belum diset");
     return;
   }
 
