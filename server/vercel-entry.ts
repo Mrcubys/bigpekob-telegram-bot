@@ -1,5 +1,5 @@
 /**
- * Vercel Build Output API entry point
+ * Vercel Build Output API entry point (ES module)
  * Bundled by esbuild into .vercel/output/functions/api/index.func/index.js
  */
 import { createApp } from "./app";
@@ -14,14 +14,15 @@ function ensureHandler(): Promise<void> {
       handler = app as any;
     }).catch((err: Error) => {
       console.error("[vercel] Handler init error:", err);
-      initPromise = null; // allow retry
+      initPromise = null;
       throw err;
     });
   }
   return initPromise;
 }
 
-module.exports = async function vercelHandler(req: IncomingMessage, res: ServerResponse) {
+// Export as default for Vercel ES module handler
+export default async function vercelHandler(req: IncomingMessage, res: ServerResponse): Promise<void> {
   try {
     await ensureHandler();
     handler!(req, res);
@@ -33,8 +34,8 @@ module.exports = async function vercelHandler(req: IncomingMessage, res: ServerR
       res.end(JSON.stringify({
         error: "Server initialization failed",
         message: err?.message || String(err),
-        stack: err?.stack?.split?.("\n")?.slice(0, 8)?.join("\n"),
+        stack: err?.stack?.split?.("\n")?.slice(0, 8)?.join?.("\n"),
       }));
     }
   }
-};
+}
