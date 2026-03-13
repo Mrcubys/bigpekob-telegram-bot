@@ -74,19 +74,28 @@ async function buildAll() {
     logLevel: "info",
   });
 
-  if (isVercel) {
-    // === Vercel Build Output API v3 ===
-    console.log("Building Vercel output (Build Output API v3)...");
+  // Standard serverless handler bundle used by Vercel Function api/index.js
+  console.log("building serverless handler...");
+  await esbuild({
+    entryPoints: ["server/handler.ts"],
+    platform: "node",
+    bundle: true,
+    format: "cjs",
+    outfile: "dist/handler.cjs",
+    define: {
+      "process.env.NODE_ENV": '"production"',
+    },
+    minify: true,
+    external: externals,
+    logLevel: "info",
+  });
 
-    // Create output directories
+  if (isVercel) {
+    // Optional Build Output API artifact generation (kept for compatibility)
+    console.log("Building Vercel output (Build Output API v3)...");
     await mkdir(".vercel/output/static", { recursive: true });
     await mkdir(".vercel/output/functions/api/index.func", { recursive: true });
-
-    // Copy static files from dist/public → .vercel/output/static
     await cp("dist/public", ".vercel/output/static", { recursive: true });
-
-    // Bundle the Vercel entry point into the function directory
-    console.log("bundling serverless function...");
     await esbuild({
       entryPoints: ["server/vercel-entry.ts"],
       platform: "node",
@@ -101,8 +110,6 @@ async function buildAll() {
       external: externals,
       logLevel: "info",
     });
-
-    // Write function config (.vc-config.json)
     await writeFile(
       ".vercel/output/functions/api/index.func/.vc-config.json",
       JSON.stringify({
@@ -112,50 +119,17 @@ async function buildAll() {
         maxDuration: 30,
       }, null, 2)
     );
-
-    // Write Vercel output config (routes)
     await writeFile(
       ".vercel/output/config.json",
       JSON.stringify({
         version: 3,
         routes: [
-          // Route all /api/* to the serverless function
-          {
-            src: "^/api(/.*)?$",
-            dest: "/api/index",
-          },
-          // Serve static files that exist
+          { src: "^/api(/.*)?$", dest: "/api/index" },
           { handle: "filesystem" },
-          // SPA fallback: all other routes → index.html
-          {
-            src: "/(.*)",
-            dest: "/index.html",
-          },
+          { src: "/(.*)", dest: "/index.html" },
         ],
       }, null, 2)
     );
-
-    console.log("Vercel Build Output API structure created!");
-    console.log("  .vercel/output/static/ (from dist/public)");
-    console.log("  .vercel/output/functions/api/index.func/");
-    console.log("  .vercel/output/config.json");
-
-  } else {
-    // Standard handler.cjs for non-Vercel deployments
-    console.log("building serverless handler...");
-    await esbuild({
-      entryPoints: ["server/handler.ts"],
-      platform: "node",
-      bundle: true,
-      format: "cjs",
-      outfile: "dist/handler.cjs",
-      define: {
-        "process.env.NODE_ENV": '"production"',
-      },
-      minify: true,
-      external: externals,
-      logLevel: "info",
-    });
   }
 }
 

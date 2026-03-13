@@ -149,12 +149,13 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
       if (initData && (process.env.TELEGRAM_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN_MAIN)) {
         const crypto = await import("crypto");
+        const botToken = process.env.TELEGRAM_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN_MAIN || "";
         const params = new URLSearchParams(initData);
         const hash = params.get("hash");
         params.delete("hash");
         const sorted = Array.from(params.entries()).sort(([a], [b]) => a.localeCompare(b));
         const dataCheckString = sorted.map(([k, v]) => `${k}=${v}`).join("\n");
-        const secretKey = crypto.createHmac("sha256", "WebAppData").update(process.env.TELEGRAM_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN_MAIN).digest();
+        const secretKey = crypto.createHmac("sha256", "WebAppData").update(botToken).digest();
         const computedHash = crypto.createHmac("sha256", secretKey).update(dataCheckString).digest("hex");
         if (hash === computedHash) {
           const userStr = params.get("user");
@@ -616,9 +617,13 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
-  setupTelegramWebhook().catch(console.error);
-  setupChatBot().catch(console.error);
-  setupDevBot().catch(console.error);
+  const g = globalThis as typeof globalThis & { __botsInitialized?: boolean };
+  if (!g.__botsInitialized) {
+    g.__botsInitialized = true;
+    setupTelegramWebhook().catch(console.error);
+    setupChatBot().catch(console.error);
+    setupDevBot().catch(console.error);
+  }
 
   // Seed database
   setTimeout(async () => {
