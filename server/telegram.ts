@@ -355,6 +355,55 @@ async function postToChannel() {
         [{ text: "🎬 Cobain Sekarang", url: `https://t.me/${BIGPEKOB_BOT}` }],
       ],
     }),
+
+    // ========== Ajakan Berbagi Video ==========
+    () => ({
+      text:
+        `🎥 <b>BUAT VIDEO VIRAL!</b>\n\n` +
+        `Punya video menarik? Jangan diam saja!\n\n` +
+        `📤 Upload ke BigPekob dan:\n` +
+        `• Tampil di beranda ribuan member\n` +
+        `• Dapet likes & komentar\n` +
+        `• Jadiin konten eksklusif VIP\n` +
+        `• Bisa dapat banyak followers\n\n` +
+        `👤 ${stats.videoCount}+ video udah diupload!\n` +
+        `Giliran kamu sekarang!`,
+      buttons: [
+        [{ text: "🎤 Upload Sekarang", url: `https://t.me/${BIGPEKOB_BOT}?start=upload` }],
+      ],
+    }),
+
+    // ========== Ajakan Berbagi PAP ==========
+    () => ({
+      text:
+        `📸 <b>SHARE PAPMU!</b>\n\n` +
+        `Ketik /pap di @${BIGPEKOB_BOT} untuk:\n\n` +
+        `👨 Kirim PAP kamu\n` +
+        `🔒 Lihat PAP member lain\n` +
+        `🔥 Privasi 100% terjaga\n\n` +
+        `💬 PAP cowok dilihat cewek\n` +
+        `👩 PAP cewek dilihat cowok\n\n` +
+        `Seru dan anonim! Coba sekarang!`,
+      buttons: [
+        [{ text: "📸 Kirim PAP", url: `https://t.me/${BIGPEKOB_BOT}?start=pap` }],
+      ],
+    }),
+
+    // ========== Ajakan Invite Teman ==========
+    () => ({
+      text:
+        `🎴 <b>AKAN KEREN JIKA TEMAN KAMU DI SINI!</b>\n\n` +
+        `Invite teman gabung BigPekob:\n\n` +
+        `🎬 Nonton video bareng\n` +
+        `💬 Chat anonim bareng\n` +
+        `📤 Upload video dan saling LIKE\n\n` +
+        `Semakin banyak teman, semakin seru!\n` +
+        `Share link ini ke teman kamu!\n\n` +
+        `https://t.me/${BIGPEKOB_BOT}`,
+      buttons: [
+        [{ text: "🎬 Undang Teman", url: `https://t.me/${BIGPEKOB_BOT}` }],
+      ],
+    }),
   ];
 
   const idx = promoIndex % promos.length;

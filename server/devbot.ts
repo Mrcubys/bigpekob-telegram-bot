@@ -44,6 +44,24 @@ async function callBotAPI(token: string, method: string, params: Record<string, 
   }
 }
 
+// Get user info from Telegram API by username
+async function getTelegramUserByUsername(username: string): Promise<{ id: number; first_name: string; username: string } | null> {
+  if (!MAIN_BOT_TOKEN) return null;
+  try {
+    const result = await callBotAPI(MAIN_BOT_TOKEN, "getChat", { chat_id: "@" + username });
+    if (result.ok && result.result) {
+      return {
+        id: result.result.id,
+        first_name: result.result.first_name || "",
+        username: result.result.username || "",
+      };
+    }
+  } catch (e) {
+    console.error("[devbot] Error getting Telegram user:", e);
+  }
+  return null;
+}
+
 async function sendDevMenu(chatId: number) {
   await callAPI("sendMessage", {
     chat_id: chatId,
@@ -250,48 +268,76 @@ export async function handleDevBotUpdate(update: any) {
       const input = text.replace("@", "").trim();
       
       let targetUser: any = null;
+      let targetTgId: number | null = null;
       const asTgId = parseInt(input);
       if (!isNaN(asTgId) && asTgId > 0) {
+        // Input is a Telegram ID
         targetUser = await storage.getUserByTelegramId(asTgId);
         if (!targetUser) {
-          await callAPI("sendMessage", {
-            chat_id: chatId,
-            text: `❌ User dengan Telegram ID <code>${asTgId}</code> tidak ditemukan di database.`,
-            parse_mode: "HTML",
-            reply_markup: JSON.stringify({ inline_keyboard: [[{ text: "🔙 Kelola VIP", callback_data: "dev_vip" }]] }),
-          });
-          return;
+          // Check if user exists in Telegram
+          const tgUser = await getTelegramUserByUsername(String(asTgId));
+          if (tgUser) {
+            targetTgId = tgUser.id;
+          } else {
+            await callAPI("sendMessage", {
+              chat_id: chatId,
+              text: `❌ User dengan Telegram ID <code>${asTgId}</code> tidak ditemukan.`,
+              parse_mode: "HTML",
+              reply_markup: JSON.stringify({ inline_keyboard: [[{ text: "🔙 Kelola VIP", callback_data: "dev_vip" }]] }),
+            });
+            return;
+          }
         }
       } else {
+        // Input is a username - search in database first
         const users = await storage.searchUsers(input);
         targetUser = users.find((u: any) => u.username?.toLowerCase() === input.toLowerCase());
+        
         if (!targetUser) {
-          await callAPI("sendMessage", {
-            chat_id: chatId,
-            text: `❌ User <code>${escHtml(input)}</code> tidak ditemukan.`,
-            parse_mode: "HTML",
-            reply_markup: JSON.stringify({ inline_keyboard: [[{ text: "🔙 Kelola VIP", callback_data: "dev_vip" }]] }),
-          });
-          return;
+          // Not in database, try to get from Telegram API
+          const tgUser = await getTelegramUserByUsername(input);
+          if (tgUser) {
+            targetTgId = tgUser.id;
+          } else {
+            await callAPI("sendMessage", {
+              chat_id: chatId,
+              text: `❌ User <code>${escHtml(input)}</code> tidak ditemukan.`,
+              parse_mode: "HTML",
+              reply_markup: JSON.stringify({ inline_keyboard: [[{ text: "🔙 Kelola VIP", callback_data: "dev_vip" }]] }),
+            });
+            return;
+          }
         }
       }
 
-      if (!targetUser.telegramId) {
+      // Get the final Telegram ID
+      const finalTgId = targetUser?.telegramId || targetTgId;
+      if (!finalTgId) {
         await callAPI("sendMessage", {
           chat_id: chatId,
-          text: `❌ User @${escHtml(targetUser.username)} belum terhubung dengan Telegram. Tidak bisa set VIP.`,
+          text: `❌ Tidak dapat menentukan Telegram ID untuk user tersebut.`,
           parse_mode: "HTML",
           reply_markup: JSON.stringify({ inline_keyboard: [[{ text: "🔙 Kelola VIP", callback_data: "dev_vip" }]] }),
         });
         return;
       }
 
-      awaitingVipDays.set(tgId, targetUser.telegramId);
+      // Get user display name
+      let displayName = targetUser?.username || `@${input}`;
+      if (targetTgId && !targetUser) {
+        // Try to get user info from Telegram to show name
+        const tgInfo = await getTelegramUserByUsername(input);
+        if (tgInfo) {
+          displayName = tgInfo.username || tgInfo.first_name || input;
+        }
+      }
+
+      awaitingVipDays.set(tgId, finalTgId);
       await callAPI("sendMessage", {
         chat_id: chatId,
         text:
-          `👤 User: <b>@${escHtml(targetUser.username)}</b>\n` +
-          `📱 Telegram ID: <code>${targetUser.telegramId}</code>\n\n` +
+          `👤 User: <b>${escHtml(displayName)}</b>\n` +
+          `📱 Telegram ID: <code>${finalTgId}</code>\n\n` +
           `Berapa hari VIP? (ketik angka, misal: 30)`,
         parse_mode: "HTML",
       });
