@@ -5,7 +5,7 @@
  */
 import { pool } from "./db";
 
-const TOKEN = (process.env.CHAT_BOT_TOKEN || process.env.TELEGRAM_CHAT_BOT_TOKEN)!;
+const TOKEN = (process.env.TELEGRAM_BOT_TOKEN_CHAT)!;
 const DOMAIN = process.env.VERCEL_URL || process.env.REPLIT_DOMAINS?.split(",")[0] || "bigpekob.vercel.app";
 const WEBHOOK_URL = `https://${DOMAIN}/api/chatbot/webhook`;
 const BP_BOT = "https://t.me/bigpekob_bot";
@@ -571,7 +571,7 @@ function langSelectionKb() {
 // ─── Setup webhook ─────────────────────────────────────────────────────────
 export async function setupChatBot() {
   if (!TOKEN) {
-    console.warn("[chatbot] TELEGRAM_CHAT_BOT_TOKEN not set");
+    console.warn("[chatbot] TELEGRAM_BOT_TOKEN_CHAT not set");
     return;
   }
   await callAPI("setWebhook", { url: WEBHOOK_URL, drop_pending_updates: true });
