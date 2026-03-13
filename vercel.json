@@ -1,15 +1,12 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "dist/public/**",
-      "use": "@vercel/static"
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist/public",
+  "functions": {
+    "dist/index.cjs": {
+      "maxDuration": 30
     }
-  ],
+  },
   "routes": [
     {
       "src": "/api/(.*)",
@@ -20,6 +17,10 @@
       "dest": "/dist/index.cjs"
     },
     {
+      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|map))",
+      "dest": "/dist/public/$1"
+    },
+    {
       "src": "/(.*)",
       "dest": "/dist/public/index.html"
     }
@@ -27,7 +28,7 @@
   "crons": [
     {
       "path": "/api/cron/promo",
-      "schedule": "0 0 * * *"
+      "schedule": "0 * * * *"
     }
   ],
   "env": {
