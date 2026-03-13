@@ -1,32 +1,29 @@
 /**
- * Vercel Serverless Function — handles all API requests
- * Plain JavaScript to avoid TypeScript compilation issues
+ * Vercel Serverless Function
+ * Uses the pre-compiled serverless handler bundle
  */
 
-let appHandler = null;
-let initError = null;
+let handler = null;
+let initPromise = null;
 
-async function getHandler() {
-  if (initError) throw initError;
-  if (appHandler) return appHandler;
-
-  try {
-    const { createApp } = await import("../server/app.js");
-    const { app } = await createApp();
-    appHandler = app;
-    return appHandler;
-  } catch (err) {
-    initError = err;
-    throw err;
+function getHandler() {
+  if (!initPromise) {
+    initPromise = (async () => {
+      // Import the compiled handler bundle
+      const mod = require("../dist/handler.cjs");
+      const { getHandler: makeHandler } = mod;
+      handler = await makeHandler();
+    })();
   }
+  return initPromise;
 }
 
-export default async function handler(req, res) {
+module.exports = async function(req, res) {
   try {
-    const app = await getHandler();
-    return app(req, res);
+    await getHandler();
+    return handler(req, res);
   } catch (err) {
-    console.error("Handler initialization error:", err);
+    console.error("Serverless handler error:", err);
     res.status(500).json({ error: "Server initialization failed", message: err.message });
   }
-}
+};
