@@ -27,7 +27,7 @@
   "crons": [
     {
       "path": "/api/cron/promo",
-      "schedule": "0 * * * *"
+      "schedule": "0 0 * * *"
     }
   ],
   "env": {
