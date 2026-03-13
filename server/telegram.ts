@@ -4,7 +4,7 @@ function escHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-const TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
+const TOKEN = (process.env.MAIN_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN)!;
 const DOMAIN = process.env.VERCEL_URL || process.env.REPLIT_DOMAINS?.split(",")[0] || "bigpekob.vercel.app";
 const WEBHOOK_URL = `https://${DOMAIN}/api/telegram/webhook`;
 const MINI_APP_URL = `https://${DOMAIN}/telegram`;
@@ -32,7 +32,7 @@ async function callAPI(method: string, params: Record<string, any> = {}) {
   }
 }
 
-async function postToChannel() {
+export async function postToChannel() {
   const channel = await storage.getChannelConfig();
   if (!channel) return;
 

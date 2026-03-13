@@ -207,6 +207,7 @@ function TGVideoCard({
   const [localLikeCount, setLocalLikeCount] = useState(video.likeCount ?? 0);
   const [localCommentCount, setLocalCommentCount] = useState(video.commentCount ?? 0);
   const [showComments, setShowComments] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const playAttemptRef = useRef(0);
   const queryClient = useQueryClient();
 

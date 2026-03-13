@@ -5,7 +5,7 @@
  */
 import { pool } from "./db";
 
-const TOKEN = process.env.TELEGRAM_CHAT_BOT_TOKEN!;
+const TOKEN = (process.env.CHAT_BOT_TOKEN || process.env.TELEGRAM_CHAT_BOT_TOKEN)!;
 const DOMAIN = process.env.VERCEL_URL || process.env.REPLIT_DOMAINS?.split(",")[0] || "bigpekob.vercel.app";
 const WEBHOOK_URL = `https://${DOMAIN}/api/chatbot/webhook`;
 const BP_BOT = "https://t.me/bigpekob_bot";

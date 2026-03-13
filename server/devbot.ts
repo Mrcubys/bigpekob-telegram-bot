@@ -1,8 +1,8 @@
 import { storage } from "./storage";
 
-const TOKEN = process.env.TELEGRAM_DEV_BOT_TOKEN;
-const MAIN_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const CHAT_BOT_TOKEN = process.env.TELEGRAM_CHAT_BOT_TOKEN;
+const TOKEN = process.env.DEV_BOT_TOKEN || process.env.TELEGRAM_DEV_BOT_TOKEN;
+const MAIN_BOT_TOKEN = process.env.MAIN_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
+const CHAT_BOT_TOKEN = process.env.CHAT_BOT_TOKEN || process.env.TELEGRAM_CHAT_BOT_TOKEN;
 const DOMAIN = process.env.VERCEL_URL || process.env.REPLIT_DOMAINS?.split(",")[0] || "bigpekob.vercel.app";
 const WEBHOOK_URL = `https://${DOMAIN}/api/devbot/webhook`;
 

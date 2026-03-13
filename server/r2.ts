@@ -8,7 +8,7 @@ import { Readable } from "stream";
 const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID || "";
 const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY || "";
 const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || "bot-telegram";
-const R2_ENDPOINT = process.env.R2_ENDPOINT || "";
+const R2_ENDPOINT = process.env.R2_ENDPOINT_URL || process.env.R2_ENDPOINT || "";
 
 const r2Client = new S3Client({
   region: "auto",
@@ -56,8 +56,8 @@ export async function uploadToR2(
 
     await upload.done();
 
-    // Generate public URL (R2 public URL format)
-    const publicUrl = `https://${R2_BUCKET_NAME}.${R2_ENDPOINT.replace(/^https?:\/\//, '')}/${key}`;
+    // Store URL as endpoint/bucket/key (path-style — Cloudflare R2 uses path-style)
+    const publicUrl = `${R2_ENDPOINT}/${R2_BUCKET_NAME}/${key}`;
 
     return {
       success: true,
@@ -141,8 +141,27 @@ export function isR2Configured(): boolean {
 }
 
 /**
- * Get R2 public URL for a file
+ * Get R2 public URL for a file key
  */
 export function getR2PublicUrl(key: string): string {
-  return `https://${R2_BUCKET_NAME}.${R2_ENDPOINT.replace(/^https?:\/\//, '')}/${key}`;
+  return `${R2_ENDPOINT}/${R2_BUCKET_NAME}/${key}`;
+}
+
+/**
+ * Extract R2 key from a stored R2 URL
+ */
+export function extractR2Key(url: string): string | null {
+  try {
+    // Handle path-style: https://ACCOUNT.r2.cloudflarestorage.com/BUCKET/videos/...
+    const r2Match = url.match(/\.r2\.cloudflarestorage\.com\/[^/]+\/(videos\/.+)$/);
+    if (r2Match) return r2Match[1];
+
+    // Handle legacy subdomain-style: https://BUCKET.ACCOUNT.r2.cloudflarestorage.com/videos/...
+    const legacyMatch = url.match(/\.r2\.cloudflarestorage\.com\/(videos\/.+)$/);
+    if (legacyMatch) return legacyMatch[1];
+
+    return null;
+  } catch {
+    return null;
+  }
 }

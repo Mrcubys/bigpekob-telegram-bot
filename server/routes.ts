@@ -13,10 +13,10 @@ import { Strategy as LocalStrategy } from "passport-local";
 import session from "express-session";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
-import { setupTelegramWebhook, handleTelegramUpdate } from "./telegram";
+import { setupTelegramWebhook, handleTelegramUpdate, postToChannel } from "./telegram";
 import { handleChatBotUpdate, setupChatBot } from "./chatbot";
 import { handleDevBotUpdate, setupDevBot } from "./devbot";
-import { uploadToR2, isR2Configured, downloadFromR2 } from "./r2";
+import { uploadToR2, isR2Configured, downloadFromR2, extractR2Key } from "./r2";
 
 // Upload directory — must be defined BEFORE multer
 const uploadDir = path.join(process.cwd(), "uploads");
@@ -398,7 +398,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       if (isR2Configured() && videoRow.fileUrl.includes(".r2.cloudflarestorage.com")) {
         // Extract key from R2 URL
         const urlParts = videoRow.fileUrl.split("/");
-        const key = urlParts.slice(urlParts.indexOf("videos") || 3).join("/");
+        const key = extractR2Key(videoRow.fileUrl) || urlParts.slice(Math.max(urlParts.indexOf("videos"), 3)).join("/");
         
         const r2Result = await downloadFromR2(key);
         if (r2Result.success && r2Result.data) {
@@ -592,6 +592,20 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       await handleDevBotUpdate(req.body);
     } catch (err) {
       console.error("[devbot] webhook error:", err);
+    }
+  });
+
+  // Vercel Cron: POST /api/cron/promo triggers hourly promo to channel
+  app.post("/api/cron/promo", async (req, res) => {
+    const cronSecret = process.env.CRON_SECRET;
+    const reqSecret = req.headers["x-cron-secret"] || req.query.secret;
+    if (cronSecret && reqSecret !== cronSecret) return res.status(401).json({ error: "Unauthorized" });
+    try {
+      await postToChannel();
+      res.json({ ok: true, ts: new Date().toISOString() });
+    } catch (err: any) {
+      console.error("[cron] promo error:", err);
+      res.status(500).json({ error: err.message });
     }
   });
 

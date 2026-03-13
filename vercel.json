@@ -24,6 +24,12 @@
       "dest": "/dist/public/index.html"
     }
   ],
+  "crons": [
+    {
+      "path": "/api/cron/promo",
+      "schedule": "0 * * * *"
+    }
+  ],
   "env": {
     "NODE_ENV": "production"
   }
