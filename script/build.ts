@@ -51,12 +51,29 @@ async function buildAll() {
   ];
   const externals = allDeps.filter((dep) => !allowlist.includes(dep));
 
+  // Main server bundle (for dev/self-hosted)
   await esbuild({
     entryPoints: ["server/index.ts"],
     platform: "node",
     bundle: true,
     format: "cjs",
     outfile: "dist/index.cjs",
+    define: {
+      "process.env.NODE_ENV": '"production"',
+    },
+    minify: true,
+    external: externals,
+    logLevel: "info",
+  });
+
+  console.log("building serverless handler...");
+  // Serverless handler bundle (for Vercel)
+  await esbuild({
+    entryPoints: ["server/handler.ts"],
+    platform: "node",
+    bundle: true,
+    format: "cjs",
+    outfile: "dist/handler.cjs",
     define: {
       "process.env.NODE_ENV": '"production"',
     },
