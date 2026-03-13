@@ -16,6 +16,7 @@ import { eq } from "drizzle-orm";
 import { setupTelegramWebhook, handleTelegramUpdate } from "./telegram";
 import { handleChatBotUpdate, setupChatBot } from "./chatbot";
 import { handleDevBotUpdate, setupDevBot } from "./devbot";
+import { uploadToR2, isR2Configured } from "./r2";
 
 // Upload directory — must be defined BEFORE multer
 const uploadDir = path.join(process.cwd(), "uploads");
@@ -409,8 +410,30 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const title = req.body.title || "Untitled";
       const description = req.body.description || "";
       const mimeType = req.file.mimetype || "video/mp4";
-      const fileUrl = `/uploads/${req.file.filename}`;
       const isExclusive = req.body.isExclusive === "true" || req.body.isExclusive === "1";
+
+      let fileUrl: string;
+
+      // Use R2 if configured, otherwise use local storage
+      if (isR2Configured()) {
+        // Read file buffer
+        const fileBuffer = fs.readFileSync(req.file.path);
+        
+        // Upload to R2
+        const r2Result = await uploadToR2(fileBuffer, req.file.filename, mimeType);
+        
+        if (r2Result.success && r2Result.url) {
+          fileUrl = r2Result.url;
+          console.log("[r2] Video uploaded:", fileUrl);
+        } else {
+          console.error("[r2] Upload failed:", r2Result.error);
+          // Fallback to local storage
+          fileUrl = `/uploads/${req.file.filename}`;
+        }
+      } else {
+        // Use local storage
+        fileUrl = `/uploads/${req.file.filename}`;
+      }
 
       const video = await storage.createVideo({
         title,
