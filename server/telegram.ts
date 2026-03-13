@@ -5,7 +5,7 @@ function escHtml(s: string): string {
 }
 
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
-const DOMAIN = process.env.REPLIT_DOMAINS?.split(",")[0] || "";
+const DOMAIN = process.env.VERCEL_URL || process.env.REPLIT_DOMAINS?.split(",")[0] || "bigpekob.vercel.app";
 const WEBHOOK_URL = `https://${DOMAIN}/api/telegram/webhook`;
 const MINI_APP_URL = `https://${DOMAIN}/telegram`;
 const VIP_STARS_PRICE = 100;
