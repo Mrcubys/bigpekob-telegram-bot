@@ -19,9 +19,16 @@ import { handleDevBotUpdate, setupDevBot } from "./devbot";
 import { uploadToR2, isR2Configured, downloadFromR2, extractR2Key } from "./r2";
 
 // Upload directory — must be defined BEFORE multer
-const uploadDir = path.join(process.cwd(), "uploads");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+// In Vercel serverless, use /tmp which is writable; fallback to cwd/uploads
+const uploadDir = process.env.VERCEL 
+  ? '/tmp/uploads' 
+  : path.join(process.cwd(), "uploads");
+try {
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+} catch (e) {
+  console.warn('[routes] Could not create upload dir:', (e as any).message);
 }
 
 // Setup multer: disk storage to avoid OOM on large video files
