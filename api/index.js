@@ -1,46 +1,16 @@
 /**
- * Vercel Serverless Function
- * Uses the pre-compiled serverless handler bundle
+ * Vercel Serverless Function - MINIMAL DEBUG VERSION
  */
-
-let handler = null;
-let initError = null;
-let initPromise = null;
-
-function getHandler() {
-  if (!initPromise) {
-    initPromise = (async () => {
-      try {
-        const mod = require("../dist/handler.cjs");
-        const { getHandler: makeHandler } = mod;
-        handler = await makeHandler();
-      } catch (err) {
-        initError = err;
-        throw err;
-      }
-    })();
-  }
-  return initPromise;
-}
-
-module.exports = async function(req, res) {
-  // Simple health check bypass — no DB needed
-  if (req.url === '/api/ping' || req.url === '/api/ping/') {
-    return res.status(200).json({ ok: true, ts: Date.now() });
-  }
-
-  try {
-    await getHandler();
-    return handler(req, res);
-  } catch (err) {
-    console.error("Serverless handler error:", err);
-    if (!res.headersSent) {
-      res.status(500).json({
-        error: "Server initialization failed",
-        message: err && err.message,
-        stack: err && err.stack && err.stack.split('\n').slice(0, 10).join('\n'),
-        cachedError: initError && initError.message,
-      });
-    }
-  }
+module.exports = function(req, res) {
+  res.setHeader('Content-Type', 'application/json');
+  res.statusCode = 200;
+  res.end(JSON.stringify({
+    ok: true,
+    url: req.url,
+    method: req.method,
+    env: process.env.NODE_ENV,
+    vercel: !!process.env.VERCEL,
+    hasDb: !!(process.env.NEON_DATABASE_URL || process.env.DATABASE_URL),
+    hasTgMain: !!process.env.TELEGRAM_BOT_TOKEN_MAIN
+  }));
 };
