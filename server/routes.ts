@@ -16,7 +16,7 @@ import { eq } from "drizzle-orm";
 import { setupTelegramWebhook, handleTelegramUpdate } from "./telegram";
 import { handleChatBotUpdate, setupChatBot } from "./chatbot";
 import { handleDevBotUpdate, setupDevBot } from "./devbot";
-import { uploadToR2, isR2Configured } from "./r2";
+import { uploadToR2, isR2Configured, downloadFromR2 } from "./r2";
 
 // Upload directory — must be defined BEFORE multer
 const uploadDir = path.join(process.cwd(), "uploads");
@@ -378,12 +378,13 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       .select({ fileUrl: videos.fileUrl, mimeType: videos.mimeType, title: videos.title })
       .from(videos)
       .where(eq(videos.id, id));
-    if (!videoRow) return res.status(404).json({ message: "Not found" });
+    if (!videoRow) return res.status(404).json({ message: "Video not found" });
 
     const filename = `${videoRow.title?.replace(/[^a-z0-9]/gi, "_") || "video"}.mp4`;
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
 
-    if (videoRow.fileUrl) {
+    // Case 1: Local file storage
+    if (videoRow.fileUrl && videoRow.fileUrl.startsWith("/uploads/")) {
       const filePath = path.join(process.cwd(), videoRow.fileUrl.startsWith("/") ? videoRow.fileUrl.slice(1) : videoRow.fileUrl);
       if (fs.existsSync(filePath)) {
         res.setHeader("Content-Type", videoRow.mimeType || "video/mp4");
@@ -391,6 +392,27 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       }
     }
 
+    // Case 2: R2/external URL storage
+    if (videoRow.fileUrl && (videoRow.fileUrl.startsWith("http://") || videoRow.fileUrl.startsWith("https://"))) {
+      // Check if it's an R2 URL
+      if (isR2Configured() && videoRow.fileUrl.includes(".r2.cloudflarestorage.com")) {
+        // Extract key from R2 URL
+        const urlParts = videoRow.fileUrl.split("/");
+        const key = urlParts.slice(urlParts.indexOf("videos") || 3).join("/");
+        
+        const r2Result = await downloadFromR2(key);
+        if (r2Result.success && r2Result.data) {
+          res.setHeader("Content-Type", r2Result.contentType || videoRow.mimeType || "video/mp4");
+          res.setHeader("Content-Length", r2Result.data.length);
+          return res.end(r2Result.data);
+        }
+      }
+      
+      // For other external URLs, redirect to the URL
+      return res.redirect(videoRow.fileUrl);
+    }
+
+    // Case 3: Database storage (videoData)
     const cached = await getCachedVideoData(id);
     if (!cached) return res.status(404).json({ message: "Video data not found" });
     res.setHeader("Content-Type", cached.mimeType || "video/mp4");
