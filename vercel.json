@@ -2,22 +2,14 @@
   "version": 2,
   "buildCommand": "npm run build",
   "outputDirectory": "dist/public",
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "/dist/index.cjs"
+      "source": "/api/:path*",
+      "destination": "/api/index"
     },
     {
-      "src": "/telegram",
-      "dest": "/dist/index.cjs"
-    },
-    {
-      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|map))",
-      "dest": "/dist/public/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/dist/public/index.html"
+      "source": "/telegram",
+      "destination": "/api/index"
     }
   ],
   "crons": [
