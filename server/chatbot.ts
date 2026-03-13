@@ -6,7 +6,7 @@
 import { pool } from "./db";
 
 const TOKEN = (process.env.TELEGRAM_BOT_TOKEN_CHAT)!;
-const DOMAIN = process.env.VERCEL_URL || process.env.REPLIT_DOMAINS?.split(",")[0] || "bigpekob.vercel.app";
+const DOMAIN = process.env.APP_URL?.replace("https://", "") || process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL || process.env.REPLIT_DOMAINS?.split(",")[0] || "bigpekob-telegram-bot.vercel.app";
 const WEBHOOK_URL = `https://${DOMAIN}/api/chatbot/webhook`;
 const BP_BOT = "https://t.me/bigpekob_bot";
 const CHAT_BOT = "https://t.me/bigpekob_chat_bot";
