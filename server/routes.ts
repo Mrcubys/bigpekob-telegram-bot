@@ -616,9 +616,13 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
-  setupTelegramWebhook().catch(console.error);
-  setupChatBot().catch(console.error);
-  setupDevBot().catch(console.error);
+  const g = globalThis as typeof globalThis & { __botsInitialized?: boolean };
+  if (!g.__botsInitialized) {
+    g.__botsInitialized = true;
+    setupTelegramWebhook().catch(console.error);
+    setupChatBot().catch(console.error);
+    setupDevBot().catch(console.error);
+  }
 
   // Seed database
   setTimeout(async () => {

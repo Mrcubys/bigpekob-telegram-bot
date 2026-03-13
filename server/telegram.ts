@@ -462,8 +462,10 @@ export async function setupTelegramWebhook() {
     },
   });
 
-  setInterval(postToChannel, 60 * 60 * 1000);
-  setTimeout(postToChannel, 2 * 60 * 1000);
+  if (!process.env.VERCEL) {
+    setInterval(postToChannel, 60 * 60 * 1000);
+    setTimeout(postToChannel, 2 * 60 * 1000);
+  }
 
   console.log(`[telegram] Webhook aktif: ${WEBHOOK_URL}`);
 }
