@@ -2,9 +2,14 @@ import { build as esbuild } from "esbuild";
 import { build as viteBuild } from "vite";
 import { rm, readFile } from "fs/promises";
 
-// server deps to bundle to reduce openat(2) syscalls
-// which helps cold start times
+// Server deps to bundle to reduce cold-start time
 const allowlist = [
+  "@aws-sdk/client-s3",
+  "@aws-sdk/lib-storage",
+  "@aws-sdk/middleware-retry",
+  "@aws-sdk/credential-provider-node",
+  "@smithy/node-http-handler",
+  "@smithy/fetch-http-handler",
   "@google/generative-ai",
   "axios",
   "connect-pg-simple",
