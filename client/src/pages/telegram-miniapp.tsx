@@ -17,6 +17,7 @@ declare global {
         ready: () => void;
         expand: () => void;
         close: () => void;
+        openLink?: (url: string) => void;
         initData: string;
         initDataUnsafe: {
           user?: {
