@@ -1,59 +1,23 @@
 /**
- * Vercel Serverless Function entry point
- * Wraps the Express app for Vercel serverless deployment
+ * Vercel Serverless Function — handles all /api/* routes
  */
-import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "../server/routes";
-import { serveStatic } from "../server/static";
-import { createServer } from "http";
-import { runStartupSeed } from "../server/seed";
+import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { createApp } from "../server/app";
+import type { Application } from "express";
 
-const app = express();
-const httpServer = createServer(app);
-
-app.set("trust proxy", 1);
-
-declare module "http" {
-  interface IncomingMessage {
-    rawBody: unknown;
-  }
-}
-
-app.use(
-  express.json({
-    limit: "10mb",
-    verify: (req, _res, buf) => {
-      req.rawBody = buf;
-    },
-  }),
-);
-
-app.use(express.urlencoded({ extended: false }));
-
-// Initialize routes and seed
-let initialized = false;
+let app: Application | null = null;
 let initPromise: Promise<void> | null = null;
 
-async function initialize() {
-  if (!initialized) {
-    await registerRoutes(httpServer, app);
-    await runStartupSeed();
-
-    app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
-      const status = err.status || err.statusCode || 500;
-      const message = err.message || "Internal Server Error";
-      if (res.headersSent) return next(err);
-      return res.status(status).json({ message });
+function ensureApp(): Promise<void> {
+  if (!initPromise) {
+    initPromise = createApp().then(({ app: a }) => {
+      app = a;
     });
-
-    serveStatic(app);
-    initialized = true;
   }
+  return initPromise;
 }
 
-initPromise = initialize().catch(console.error);
-
-export default async function handler(req: Request, res: Response) {
-  if (initPromise) await initPromise;
-  return app(req, res);
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  await ensureApp();
+  return app!(req as any, res as any);
 }
