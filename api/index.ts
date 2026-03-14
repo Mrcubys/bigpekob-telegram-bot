@@ -5,7 +5,7 @@
 
 import type { IncomingMessage, ServerResponse } from "http";
 
-let cachedHandler: ((req: IncomingMessage, res: ServerResponse) => unknown) | null = null;
+let cachedHandler: ((req: IncomingMessage, res: ServerResponse) => unknown | Promise<unknown>) | null = null;
 
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
   try {
@@ -20,7 +20,8 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       }
     }
 
-    return cachedHandler(req, res);
+    await Promise.resolve(cachedHandler(req, res));
+    return;
   } catch (err: any) {
     console.error("[vercel] api bootstrap error:", err);
     if (!(res as any).headersSent) {
